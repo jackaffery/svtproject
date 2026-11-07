@@ -72,7 +72,7 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
                 style={{ paintOrder: "stroke" }}
                 className={
                   isPartner(l.name)
-                    ? "fill-gold stroke-primary-deep font-bold"
+                    ? "fill-primary-deep stroke-primary-foreground/85 font-bold"
                     : "fill-primary-foreground/90 stroke-primary-deep"
                 }
               >
