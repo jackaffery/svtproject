@@ -140,7 +140,7 @@ function Index() {
               <p className="eyebrow text-gold!">Global reach</p>
               <h2 className="mt-3 text-3xl font-semibold md:text-4xl">Every country, named on the map</h2>
               <p className="mt-5 max-w-2xl text-primary-foreground/80">
-                All {countryNames.length} countries appear on the earth map below: {mapLabels.length} named in place, and the {mapMarkers.length} too small to hold a name marked with a number and listed under the map. The {tradePartners.length} largest trading partners of the United States are in gold.
+                All {countryNames.length} countries appear on the earth map below: {mapLabels.length} named in place, and the {mapMarkers.length} too small to hold their own name marked with a gold dot and listed under the map. The {tradePartners.length} largest trading partners of the United States are in gold.
               </p>
             </div>
             <Link to="/contact" className="inline-flex items-center gap-2 font-semibold text-gold hover:underline">
@@ -150,7 +150,9 @@ function Index() {
 
           <WorldMap partners={tradePartners} />
 
-          <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <p className="eyebrow mt-10 text-gold!">Our twelve trading partners</p>
+
+          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {tradePartners.map((c) => (
               <li key={c} className="flex items-center gap-2 rounded-md border border-primary-foreground/15 bg-primary-foreground/5 px-3 py-2 text-sm font-medium">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
