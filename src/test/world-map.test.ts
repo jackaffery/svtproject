@@ -8,6 +8,7 @@ import {
   countryNames,
   labelBox,
   mapLabels,
+  mapMarkers,
 } from "@/lib/world-map-data";
 
 const tradePartners = [
