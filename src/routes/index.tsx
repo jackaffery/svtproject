@@ -105,7 +105,7 @@ function Index() {
             <blockquote className="mt-6 border-l-2 border-gold pl-5 text-lg italic text-foreground">
               "We are building this institution to outlast us. That is the only reason worth having a stake in it."
             </blockquote>
-            <p className="mt-5 max-w-xl text-sm text-muted-foreground">
+            <p className="mt-5 max-w-xl text-sm text-foreground/75">
               She is not a personal advisor and does not manage individual accounts. For day-to-day help with a savings or checking account, our customer service team is the place to start.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -137,7 +137,7 @@ function Index() {
         <div className="mx-auto max-w-7xl px-5 py-16 md:py-20">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="eyebrow">Global reach</p>
+              <p className="eyebrow text-gold!">Global reach</p>
               <h2 className="mt-3 text-3xl font-semibold md:text-4xl">Every country, named on the map</h2>
               <p className="mt-5 max-w-2xl text-primary-foreground/80">
                 All {countryNames.length} countries appear on the earth map below: {mapLabels.length} named in place, and the {mapMarkers.length} too small to hold a name marked with a number and listed under the map. The {tradePartners.length} largest trading partners of the United States are in gold.
