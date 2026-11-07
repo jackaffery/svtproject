@@ -52,6 +52,16 @@ export type MapLabel = {
   leader: boolean;
 };
 
+export type MapMarker = {
+  name: string;
+  n: number;
+  cx: number;
+  cy: number;
+  x: number;
+  y: number;
+  size: number;
+};
+
 export type Box = { x0: number; y0: number; x1: number; y1: number };
 
 /**
@@ -72,15 +82,28 @@ export function boxesOverlap(a: Box, b: Box) {
 const ANGLES = Array.from({ length: 20 }, (_, i) => (i / 20) * Math.PI * 2);
 const RINGS = [0, 9, 17, 26, 36, 48, 62, 78, 96, 116, 138, 162, 188, 216, 246];
 
+/** How far a name may drift from its own country before it is numbered instead. */
+const ON_MAP_MAX_RING = 40;
+
+const sizeForRank = (rank: number) =>
+  rank < 10 ? 11 : rank < 32 ? 9.5 : rank < 70 ? 8 : rank < 120 ? 6.8 : 6;
+
+function fits(box: Box, placed: Box[]) {
+  if (box.x0 < 3 || box.x1 > MAP_W - 3 || box.y0 < 3 || box.y1 > MAP_H - 3) return false;
+  return !placed.some((p) => boxesOverlap(box, p));
+}
+
 /**
- * Places one name per country. The biggest landmasses are placed first so they
- * keep their own space; every other country searches outwards from its centre
- * until it finds a gap that no name already on the map occupies.
+ * Puts a name on every country that has room for one. Big landmasses are placed
+ * first so they keep their own space; the rest search outwards from their
+ * centre, but only as far as ON_MAP_MAX_RING, so a name never wanders off to
+ * the other side of the map. Countries left without room come back numbered.
  */
-export function computeLabels(maxRing = RINGS[RINGS.length - 1]): MapLabel[] {
+export function computeLayout(): { labels: MapLabel[]; markers: MapMarker[] } {
   const placed: Box[] = [];
   const labels: MapLabel[] = [];
-  const rings = RINGS.filter((r) => r <= maxRing);
+  const cramped: { name: string; cx: number; cy: number }[] = [];
+  const rings = RINGS.filter((r) => r <= ON_MAP_MAX_RING);
 
   const items = countries
     .map((f) => {
@@ -96,9 +119,6 @@ export function computeLabels(maxRing = RINGS[RINGS.length - 1]): MapLabel[] {
     .filter((i) => Number.isFinite(i.cx) && Number.isFinite(i.cy))
     .sort((a, b) => b.area - a.area);
 
-  const sizeForRank = (rank: number) =>
-    rank < 10 ? 11 : rank < 32 ? 9.5 : rank < 70 ? 8 : rank < 120 ? 6.8 : 6;
-
   items.forEach((item, rank) => {
     const size = sizeForRank(rank);
     let spot: { x: number; y: number; ring: number } | null = null;
@@ -108,8 +128,7 @@ export function computeLabels(maxRing = RINGS[RINGS.length - 1]): MapLabel[] {
         const x = item.cx + Math.cos(angle) * ring;
         const y = item.cy + Math.sin(angle) * ring;
         const box = labelBox({ name: item.name, x, y, size });
-        if (box.x0 < 3 || box.x1 > MAP_W - 3 || box.y0 < 3 || box.y1 > MAP_H - 3) continue;
-        if (placed.some((p) => boxesOverlap(box, p))) continue;
+        if (!fits(box, placed)) continue;
         placed.push(box);
         spot = { x, y, ring };
         break outer;
@@ -124,15 +143,51 @@ export function computeLabels(maxRing = RINGS[RINGS.length - 1]): MapLabel[] {
         size,
         cx: item.cx,
         cy: item.cy,
-        leader: spot.ring > 20,
+        leader: spot.ring > 12,
       });
+    } else {
+      cramped.push({ name: item.name, cx: item.cx, cy: item.cy });
     }
   });
 
-  return labels;
+  const markers = cramped
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c, i) => {
+      const n = i + 1;
+      const size = 7.5;
+      const digits = String(n).length;
+      let x = c.cx;
+      let y = c.cy;
+
+      for (const ring of [0, 6, 10, 15, 20, 26, 33]) {
+        const found = ANGLES.some((angle) => {
+          const px = c.cx + Math.cos(angle) * ring;
+          const py = c.cy + Math.sin(angle) * ring;
+          const box: Box = {
+            x0: px - (digits * size * 0.64) / 2 - 3,
+            y0: py - (size + 3) / 2,
+            x1: px + (digits * size * 0.64) / 2 + 3,
+            y1: py + (size + 3) / 2,
+          };
+          if (!fits(box, placed)) return false;
+          placed.push(box);
+          x = px;
+          y = py;
+          return true;
+        });
+        if (found) break;
+      }
+
+      return { name: c.name, n, cx: c.cx, cy: c.cy, x, y, size };
+    });
+
+  return { labels, markers };
 }
 
-export const mapLabels = computeLabels();
+const layout = computeLayout();
+
+export const mapLabels = layout.labels;
+export const mapMarkers = layout.markers;
 
 export const countryNames = countries
   .map((c) => c.properties.name)
