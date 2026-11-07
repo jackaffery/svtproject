@@ -3,8 +3,8 @@ import type { GeoPermissibleObjects } from "d3-geo";
 import { feature } from "topojson-client";
 import countriesTopo from "world-atlas/countries-110m.json";
 
-export const MAP_W = 1000;
-export const MAP_H = 500;
+export const MAP_W = 1200;
+export const MAP_H = 560;
 
 export type CountryFeature = {
   type: "Feature";
@@ -22,8 +22,8 @@ export const countries: CountryFeature[] = (
 
 const projection = geoNaturalEarth1().fitExtent(
   [
-    [10, 10],
-    [MAP_W - 10, MAP_H - 10],
+    [12, 12],
+    [MAP_W - 12, MAP_H - 12],
   ],
   { type: "Sphere" },
 );
@@ -52,27 +52,30 @@ export type MapLabel = {
   leader: boolean;
 };
 
-const ANGLES = Array.from({ length: 16 }, (_, i) => (i / 16) * Math.PI * 2);
-const RINGS = [0, 11, 20, 30, 42, 56, 72, 90, 112, 136];
+export type Box = { x0: number; y0: number; x1: number; y1: number };
 
-type Box = { x0: number; y0: number; x1: number; y1: number };
+/**
+ * The rectangle a rendered name occupies. The per-character factor is measured
+ * against the real widths the browser draws, so two names whose boxes do not
+ * touch never collide on screen either.
+ */
+export function labelBox(l: { name: string; x: number; y: number; size: number }): Box {
+  const w = l.name.length * l.size * 0.64 + 6;
+  const h = l.size + 4;
+  return { x0: l.x - w / 2, y0: l.y - h / 2, x1: l.x + w / 2, y1: l.y + h / 2 };
+}
 
-function overlaps(a: Box, b: Box) {
+export function boxesOverlap(a: Box, b: Box) {
   return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
 }
 
-function labelSize(area: number) {
-  if (area > 9000) return 10;
-  if (area > 2500) return 8.5;
-  if (area > 600) return 7;
-  if (area > 120) return 6;
-  return 5.2;
-}
+const ANGLES = Array.from({ length: 20 }, (_, i) => (i / 20) * Math.PI * 2);
+const RINGS = [0, 9, 17, 26, 36, 48, 62, 78, 96, 116, 138, 162, 188, 216, 246];
 
 /**
- * Places one name per country. Big landmasses are placed first so they keep
- * their own space; small countries search outwards from their centre until they
- * find a gap that does not collide with a name already on the map.
+ * Places one name per country. The biggest landmasses are placed first so they
+ * keep their own space; every other country searches outwards from its centre
+ * until it finds a gap that no name already on the map occupies.
  */
 export function computeLabels(): MapLabel[] {
   const placed: Box[] = [];
@@ -92,25 +95,20 @@ export function computeLabels(): MapLabel[] {
     .filter((i) => Number.isFinite(i.cx) && Number.isFinite(i.cy))
     .sort((a, b) => b.area - a.area);
 
-  for (const item of items) {
-    const size = labelSize(item.area);
-    const w = item.name.length * size * 0.53 + 3;
-    const h = size + 2;
+  const sizeForRank = (rank: number) =>
+    rank < 10 ? 11 : rank < 32 ? 9.5 : rank < 70 ? 8 : rank < 120 ? 6.8 : 6;
 
+  items.forEach((item, rank) => {
+    const size = sizeForRank(rank);
     let spot: { x: number; y: number; ring: number } | null = null;
 
     outer: for (const ring of RINGS) {
       for (const angle of ANGLES) {
         const x = item.cx + Math.cos(angle) * ring;
         const y = item.cy + Math.sin(angle) * ring;
-        const box: Box = {
-          x0: x - w / 2,
-          y0: y - h / 2,
-          x1: x + w / 2,
-          y1: y + h / 2,
-        };
-        if (box.x0 < 2 || box.x1 > MAP_W - 2 || box.y0 < 2 || box.y1 > MAP_H - 2) continue;
-        if (placed.some((p) => overlaps(box, p))) continue;
+        const box = labelBox({ name: item.name, x, y, size });
+        if (box.x0 < 3 || box.x1 > MAP_W - 3 || box.y0 < 3 || box.y1 > MAP_H - 3) continue;
+        if (placed.some((p) => boxesOverlap(box, p))) continue;
         placed.push(box);
         spot = { x, y, ring };
         break outer;
@@ -125,10 +123,10 @@ export function computeLabels(): MapLabel[] {
         size,
         cx: item.cx,
         cy: item.cy,
-        leader: spot.ring > 24,
+        leader: spot.ring > 20,
       });
     }
-  }
+  });
 
   return labels;
 }

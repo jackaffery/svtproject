@@ -25,7 +25,7 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
           viewBox={`0 0 ${MAP_W} ${MAP_H}`}
           role="img"
           aria-label={`World map naming all ${countryNames.length} countries`}
-          className="h-auto w-full min-w-[820px]"
+          className="h-auto w-full min-w-[900px]"
         >
           <path d={spherePath} className="fill-primary-deep" />
           <path
