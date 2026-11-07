@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Lock, Eye, Users } from "lucide-react";
-import hero from "@/assets/hero-vault.jpg";
+import heroAsset from "@/assets/hero-meeting.png.asset.json";
 import { meta, Section } from "@/components/site";
 import { services } from "@/lib/services";
 
@@ -13,7 +13,7 @@ function Index() {
   return (
     <>
       <section className="relative isolate overflow-hidden">
-        <img src={hero} alt="Stronghold Vault Trust lobby with vault door" width={1920} height={1088} className="absolute inset-0 -z-10 h-full w-full object-cover" />
+        <img src={heroAsset.url} alt="Stronghold Vault Trust team in a client meeting" className="absolute inset-0 -z-10 h-full w-full object-cover" />
         <div className="hero-scrim absolute inset-0 -z-10" />
         <div className="mx-auto max-w-7xl px-5 py-28 md:py-40">
           <p className="text-xs font-bold tracking-[0.25em] uppercase text-primary-foreground/80">Your Trust. Your Future. Your Financial Security.</p>
