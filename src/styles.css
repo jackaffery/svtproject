@@ -28,6 +28,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-silver: var(--silver);
+  --color-gold: var(--gold);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -78,7 +79,7 @@
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-primary);
+  color: var(--color-gold);
 }
 
 @utility hero-scrim {
