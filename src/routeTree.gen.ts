@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccessibilityRouteImport } from './routes/accessibility'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as CheckingRouteImport } from './routes/checking'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -44,6 +45,11 @@ const AccessibilityRoute = AccessibilityRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin-login',
+  path: '/admin-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckingRoute = CheckingRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/accessibility': typeof AccessibilityRoute
   '/admin': typeof AdminRoute
+  '/admin-login': typeof AdminLoginRoute
   '/checking': typeof CheckingRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/accessibility': typeof AccessibilityRoute
   '/admin': typeof AdminRoute
+  '/admin-login': typeof AdminLoginRoute
   '/checking': typeof CheckingRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/accessibility': typeof AccessibilityRoute
   '/admin': typeof AdminRoute
+  '/admin-login': typeof AdminLoginRoute
   '/checking': typeof CheckingRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/accessibility'
     | '/admin'
+    | '/admin-login'
     | '/checking'
     | '/contact'
     | '/dashboard'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/accessibility'
     | '/admin'
+    | '/admin-login'
     | '/checking'
     | '/contact'
     | '/dashboard'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/accessibility'
     | '/admin'
+    | '/admin-login'
     | '/checking'
     | '/contact'
     | '/dashboard'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AccessibilityRoute: typeof AccessibilityRoute
   AdminRoute: typeof AdminRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   CheckingRoute: typeof CheckingRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
@@ -266,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-login': {
+      id: '/admin-login'
+      path: '/admin-login'
+      fullPath: '/admin-login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checking': {
@@ -360,6 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AccessibilityRoute: AccessibilityRoute,
   AdminRoute: AdminRoute,
+  AdminLoginRoute: AdminLoginRoute,
   CheckingRoute: CheckingRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,

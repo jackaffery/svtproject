@@ -38,6 +38,9 @@ function Index() {
             <Link to="/login" className="px-2 font-semibold text-primary-foreground/85 underline-offset-4 hover:underline">
               Customer Login
             </Link>
+            <Link to="/admin-login" className="rounded-md border border-gold/40 bg-gold/15 px-3 py-2 text-xs font-bold text-gold hover:bg-gold/25">
+              SOLO Admin Portal
+            </Link>
           </div>
           <p className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-primary-foreground/85">
             {["No monthly maintenance fee", "Apply in about 5 minutes", "Every application reviewed by our team"].map((t) => (
