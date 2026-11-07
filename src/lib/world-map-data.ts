@@ -69,12 +69,8 @@ export type MapLabel = {
 
 export type MapMarker = {
   name: string;
-  n: number;
   cx: number;
   cy: number;
-  x: number;
-  y: number;
-  size: number;
 };
 
 export type Box = { x0: number; y0: number; x1: number; y1: number };
@@ -174,34 +170,7 @@ export function computeLayout(): { labels: MapLabel[]; markers: MapMarker[] } {
 
   const markers = cramped
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map((c, i) => {
-      const n = i + 1;
-      const size = 7.5;
-      const digits = String(n).length;
-      let x = c.cx;
-      let y = c.cy;
-
-      for (const ring of [0, 6, 10, 15, 20, 26, 33]) {
-        const found = ANGLES.some((angle) => {
-          const px = c.cx + Math.cos(angle) * ring;
-          const py = c.cy + Math.sin(angle) * ring;
-          const box: Box = {
-            x0: px - (digits * size * 0.7) / 2 - 4,
-            y0: py - (size + 3) / 2,
-            x1: px + (digits * size * 0.7) / 2 + 4,
-            y1: py + (size + 3) / 2,
-          };
-          if (!fits(box, placed)) return false;
-          placed.push(box);
-          x = px;
-          y = py;
-          return true;
-        });
-        if (found) break;
-      }
-
-      return { name: c.name, n, cx: c.cx, cy: c.cy, x, y, size };
-    });
+    .map((c) => ({ name: c.name, cx: c.cx, cy: c.cy }));
 
   return { labels, markers };
 }
