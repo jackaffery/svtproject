@@ -60,7 +60,7 @@ function AccountProfilePage() {
     }
     setUser(session);
     setFullName(session.fullName);
-    setUsername(session.username || session.email.split("@")[0]);
+    setUsername(session.username || session.email.split("@")[0] || "");
     setEmail(session.email);
     setPhone(session.phone);
     setAvatarUrl(session.avatarUrl || "");

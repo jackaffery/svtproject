@@ -3,8 +3,8 @@ export interface Beneficiary {
   name: string;
   accountNumber: string;
   bankName: string;
-  routingNumber?: string;
-  swiftBic?: string;
+  routingNumber?: string | undefined;
+  swiftBic?: string | undefined;
   country: string;
   currency: string;
   transferType: "internal" | "domestic" | "international";
@@ -14,27 +14,27 @@ export interface Beneficiary {
 export interface BankTransaction {
   id: string;
   type: "deposit" | "withdrawal" | "transfer" | "wire" | "fee";
-  transferCategory?: "internal" | "domestic" | "international";
+  transferCategory?: "internal" | "domestic" | "international" | undefined;
   description: string;
   amount: number; // negative for deductions
   fee: number;
   totalDeduction: number;
   currency: string;
-  exchangeRate?: number;
+  exchangeRate?: number | undefined;
   senderName: string;
   senderAccount: string;
   recipientName: string;
   recipientAccount: string;
   recipientBank: string;
-  routingNumber?: string;
-  swiftBic?: string;
-  recipientCountry?: string;
-  recipientAddress?: string;
-  estimatedDelivery?: string;
+  routingNumber?: string | undefined;
+  swiftBic?: string | undefined;
+  recipientCountry?: string | undefined;
+  recipientAddress?: string | undefined;
+  estimatedDelivery?: string | undefined;
   date: string;
   status: "pending" | "processing" | "completed" | "failed" | "reversed";
   reference: string;
-  auditTrail?: { timestamp: string; action: string; performedBy: string }[];
+  auditTrail?: { timestamp: string; action: string; performedBy: string }[] | undefined;
 }
 
 export interface BankCard {
@@ -79,29 +79,29 @@ export interface IrsRefundRecord {
 export interface BankUser {
   id: string;
   fullName: string;
-  username?: string;
+  username?: string | undefined;
   email: string;
   phone: string;
-  avatarUrl?: string;
+  avatarUrl?: string | undefined;
   accountNumber: string;
-  savingsAccountNumber?: string;
+  savingsAccountNumber?: string | undefined;
   routingNumber: string;
   accountType: "Personal Checking" | "High-Yield Savings" | "Private Wealth Trust" | "Advantage Checking";
   pin: string; // 4-digit security transfer PIN
-  loginPassword?: string;
+  loginPassword?: string | undefined;
   balance: number;
   savingsBalance: number;
   status: "active" | "pending_verification" | "suspended" | "dormant";
-  applicationStatus?: "pending" | "under_review" | "approved" | "declined";
-  idType?: string;
-  idNumber?: string;
-  verificationToken?: string;
-  verificationLink?: string;
-  verifiedAt?: string;
+  applicationStatus?: "pending" | "under_review" | "approved" | "declined" | undefined;
+  idType?: string | undefined;
+  idNumber?: string | undefined;
+  verificationToken?: string | undefined;
+  verificationLink?: string | undefined;
+  verifiedAt?: string | undefined;
   createdAt: string;
   address: string;
   city: string;
-  state?: string;
+  state?: string | undefined;
   country: string;
   monthlyDepositLimit: number;
   transactions: BankTransaction[];
@@ -395,14 +395,17 @@ export function updateUserDetails(userId: string, updates: Partial<BankUser>): B
   const idx = users.findIndex((u) => u.id === userId);
   if (idx === -1) return null;
 
-  users[idx] = { ...users[idx], ...updates };
+  const existing = users[idx];
+  if (!existing) return null;
+  const merged: BankUser = Object.assign({}, existing, updates);
+  users[idx] = merged;
   saveBankUsers(users);
 
   const current = getCurrentSession();
   if (current && current.id === userId) {
-    setCurrentSession(users[idx]);
+    setCurrentSession(merged);
   }
-  return users[idx];
+  return merged;
 }
 
 export function verifyUserEmail(token: string, email: string): BankUser | null {
@@ -554,6 +557,47 @@ export function executeMoneyTransfer(params: {
   }
 
   return { success: true, transaction: newTx };
+}
+
+/**
+ * Append a transaction to a user's ledger and apply it to the checking balance.
+ * Unspecified fields are filled with sensible defaults.
+ */
+export function addTransaction(
+  userId: string,
+  tx: Partial<BankTransaction> &
+    Pick<BankTransaction, "type" | "description" | "amount" | "date" | "status" | "reference">
+): BankTransaction | null {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (!user) return null;
+
+  const newTx: BankTransaction = {
+    id: "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+    fee: 0,
+    totalDeduction: 0,
+    currency: "USD",
+    senderName: user.fullName,
+    senderAccount: user.accountNumber,
+    recipientName: "",
+    recipientAccount: "",
+    recipientBank: "",
+    ...tx,
+  };
+  if (newTx.amount < 0 && newTx.totalDeduction === 0) {
+    newTx.totalDeduction = Math.abs(newTx.amount) + newTx.fee;
+  }
+
+  user.balance += newTx.amount;
+  user.balance -= newTx.fee;
+  user.transactions.unshift(newTx);
+  saveBankUsers(users);
+
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) {
+    setCurrentSession(user);
+  }
+  return newTx;
 }
 
 /**
