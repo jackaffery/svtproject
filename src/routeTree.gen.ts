@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccessibilityRouteImport } from './routes/accessibility'
+import { Route as AccountProfileRouteImport } from './routes/account-profile'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as CheckingRouteImport } from './routes/checking'
@@ -40,6 +41,11 @@ const AboutRoute = AboutRouteImport.update({
 const AccessibilityRoute = AccessibilityRouteImport.update({
   id: '/accessibility',
   path: '/accessibility',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountProfileRoute = AccountProfileRouteImport.update({
+  id: '/account-profile',
+  path: '/account-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accessibility': typeof AccessibilityRoute
+  '/account-profile': typeof AccountProfileRoute
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/checking': typeof CheckingRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accessibility': typeof AccessibilityRoute
+  '/account-profile': typeof AccountProfileRoute
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/checking': typeof CheckingRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accessibility': typeof AccessibilityRoute
+  '/account-profile': typeof AccountProfileRoute
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/checking': typeof CheckingRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/accessibility'
+    | '/account-profile'
     | '/admin'
     | '/admin-login'
     | '/checking'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/accessibility'
+    | '/account-profile'
     | '/admin'
     | '/admin-login'
     | '/checking'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/accessibility'
+    | '/account-profile'
     | '/admin'
     | '/admin-login'
     | '/checking'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AccessibilityRoute: typeof AccessibilityRoute
+  AccountProfileRoute: typeof AccountProfileRoute
   AdminRoute: typeof AdminRoute
   AdminLoginRoute: typeof AdminLoginRoute
   CheckingRoute: typeof CheckingRoute
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       path: '/accessibility'
       fullPath: '/accessibility'
       preLoaderRoute: typeof AccessibilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account-profile': {
+      id: '/account-profile'
+      path: '/account-profile'
+      fullPath: '/account-profile'
+      preLoaderRoute: typeof AccountProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -379,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AccessibilityRoute: AccessibilityRoute,
+  AccountProfileRoute: AccountProfileRoute,
   AdminRoute: AdminRoute,
   AdminLoginRoute: AdminLoginRoute,
   CheckingRoute: CheckingRoute,

@@ -11,84 +11,80 @@ export interface BankTransaction {
 export interface BankUser {
   id: string;
   fullName: string;
+  username?: string;
   email: string;
   phone: string;
+  avatarUrl?: string;
   accountNumber: string;
+  savingsAccountNumber?: string;
   routingNumber: string;
-  accountType: "Personal Checking" | "High-Yield Savings" | "Private Wealth Trust";
-  pin: string; // 4-digit security PIN
+  accountType: "Personal Checking" | "High-Yield Savings" | "Private Wealth Trust" | "Advantage Checking";
+  pin: string; // 4-digit security transfer PIN
+  loginPassword?: string;
   balance: number;
   savingsBalance: number;
-  status: "active" | "pending_verification" | "suspended";
+  status: "active" | "pending_verification" | "suspended" | "dormant";
+  applicationStatus?: "pending" | "under_review" | "approved" | "declined";
+  idType?: string;
+  idNumber?: string;
   verificationToken?: string;
   verificationLink?: string;
   verifiedAt?: string;
   createdAt: string;
   address: string;
   city: string;
+  state?: string;
   country: string;
   monthlyDepositLimit: number;
   transactions: BankTransaction[];
+  btcBalance?: number;
+  loginActivity?: { timestamp: string; ip: string; device: string; location: string }[];
 }
 
-const STORAGE_KEY = "svt_bank_users_v1";
-const SESSION_KEY = "svt_current_session_v1";
+const STORAGE_KEY = "svt_bank_users_v2";
+const SESSION_KEY = "svt_current_session_v2";
 
-// Demo initial user so the user can immediately observe the dashboard!
+// Matching user's exact profile from uploaded screenshots: Jack ray Affery
 const INITIAL_DEMO_USER: BankUser = {
-  id: "usr_svt_001",
-  fullName: "Alexander Sterling",
-  email: "alexander.sterling@example.com",
-  phone: "+1 (555) 234-8900",
-  accountNumber: "9482014892",
-  routingNumber: "021000089",
-  accountType: "Private Wealth Trust",
+  id: "usr_wsb_234662",
+  fullName: "jack ray affery",
+  username: "jackaffery2024",
+  email: "jackaffery2024@gmail.com",
+  phone: "+1 2024692219",
+  avatarUrl: "",
+  accountNumber: "45643224892",
+  savingsAccountNumber: "45643227810",
+  routingNumber: "021000021",
+  accountType: "Advantage Checking",
   pin: "2026",
-  balance: 148500.50,
-  savingsBalance: 420000.00,
+  loginPassword: "password123",
+  balance: 4564322.00,
+  savingsBalance: 0.00,
   status: "active",
-  verifiedAt: "2026-10-15T10:00:00Z",
-  createdAt: "2026-10-15T09:30:00Z",
-  address: "742 Evergreen Terrace, Suite 400",
-  city: "New York",
+  applicationStatus: "approved",
+  idType: "Driver's License / State ID",
+  idNumber: "89764543556",
+  verifiedAt: "2026-11-01T10:00:00Z",
+  createdAt: "2026-11-01T09:30:00Z",
+  address: "1600 Pennsylvania Ave NW",
+  city: "Washington",
+  state: "D.C.",
   country: "United States",
-  monthlyDepositLimit: 500000,
+  monthlyDepositLimit: 10000000,
+  btcBalance: 0.00,
+  loginActivity: [
+    { timestamp: "2026-11-07 10:14 AM", ip: "192.168.1.42", device: "Chrome 130 / Windows 11", location: "Washington, D.C." },
+    { timestamp: "2026-11-06 08:30 PM", ip: "192.168.1.42", device: "Chrome 130 / Windows 11", location: "Washington, D.C." },
+  ],
   transactions: [
     {
       id: "tx_01",
       type: "deposit",
-      description: "Direct Deposit — Sterling Capital Global LLC",
-      amount: 45000.00,
+      description: "Direct Federal Wire Deposit — Escrow Settlement",
+      amount: 4564322.00,
       date: "2026-11-05",
       status: "completed",
-      reference: "DEP-948201",
-    },
-    {
-      id: "tx_02",
-      type: "wire",
-      description: "Institutional Wire — Geneva Custody Transfer",
-      amount: -12500.00,
-      date: "2026-11-03",
-      status: "completed",
-      reference: "WIRE-481920",
-    },
-    {
-      id: "tx_03",
-      type: "deposit",
-      description: "Quarterly Treasury Yield Distribution",
-      amount: 3420.50,
-      date: "2026-10-28",
-      status: "completed",
-      reference: "INT-883912",
-    },
-    {
-      id: "tx_04",
-      type: "transfer",
-      description: "Internal Reserve Allocation to Vault Savings",
-      amount: -25000.00,
-      date: "2026-10-20",
-      status: "completed",
-      reference: "TRF-300184",
+      reference: "WSB-US-234662",
     },
   ],
 };
@@ -119,7 +115,13 @@ export function saveBankUsers(users: BankUser[]): void {
 
 export function findUserByEmail(email: string): BankUser | undefined {
   const users = getBankUsers();
-  return users.find((u) => u.email.toLowerCase().trim() === email.toLowerCase().trim());
+  const clean = email.toLowerCase().trim();
+  return users.find((u) => u.email.toLowerCase().trim() === clean || (u.username && u.username.toLowerCase().trim() === clean));
+}
+
+export function findUserById(id: string): BankUser | undefined {
+  const users = getBankUsers();
+  return users.find((u) => u.id === id);
 }
 
 export function registerNewUser(data: {
@@ -130,7 +132,10 @@ export function registerNewUser(data: {
   accountType: BankUser["accountType"];
   address: string;
   city: string;
+  state?: string;
   country: string;
+  idType?: string;
+  idNumber?: string;
   initialDeposit?: number;
 }): { user: BankUser; verificationLink: string } {
   const users = getBankUsers();
@@ -140,27 +145,36 @@ export function registerNewUser(data: {
   const verificationLink = `${origin}/verify-email?token=${token}&email=${encodeURIComponent(data.email)}`;
 
   const randomAcc = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+  const randomSav = Math.floor(1000000000 + Math.random() * 9000000000).toString();
   const initDep = Number(data.initialDeposit) || 1000;
+  const usernameGuess = data.email.split("@")[0] || "user" + Math.floor(Math.random() * 1000);
 
   const newUser: BankUser = {
-    id: "usr_" + Math.random().toString(36).substring(2, 9),
+    id: "usr_svt_" + Math.floor(100000 + Math.random() * 900000),
     fullName: data.fullName,
+    username: usernameGuess,
     email: data.email,
     phone: data.phone,
     accountNumber: randomAcc,
-    routingNumber: "021000089",
+    savingsAccountNumber: randomSav,
+    routingNumber: "021000021",
     accountType: data.accountType,
     pin: data.pin,
+    loginPassword: "password123",
     balance: initDep,
     savingsBalance: 0,
-    status: "pending_verification",
+    status: "active",
+    applicationStatus: "approved",
+    idType: data.idType || "Driver's License / State ID",
+    idNumber: data.idNumber || "DL-" + Math.floor(10000000 + Math.random() * 90000000),
     verificationToken: token,
     verificationLink,
     createdAt: new Date().toISOString(),
     address: data.address,
     city: data.city,
+    state: data.state || "",
     country: data.country,
-    monthlyDepositLimit: 100000,
+    monthlyDepositLimit: 500000,
     transactions: [
       {
         id: "tx_" + Date.now(),
@@ -177,6 +191,22 @@ export function registerNewUser(data: {
   users.unshift(newUser);
   saveBankUsers(users);
   return { user: newUser, verificationLink };
+}
+
+export function updateUserDetails(userId: string, updates: Partial<BankUser>): BankUser | null {
+  const users = getBankUsers();
+  const idx = users.findIndex((u) => u.id === userId);
+  if (idx === -1) return null;
+
+  users[idx] = { ...users[idx], ...updates };
+  saveBankUsers(users);
+
+  // If this is the current active session, sync it
+  const current = getCurrentSession();
+  if (current && current.id === userId) {
+    setCurrentSession(users[idx]);
+  }
+  return users[idx];
 }
 
 export function verifyUserEmail(token: string, email: string): BankUser | null {
@@ -201,6 +231,8 @@ export function updateUserStatus(userId: string, status: BankUser["status"]): vo
   if (user) {
     user.status = status;
     saveBankUsers(users);
+    const curr = getCurrentSession();
+    if (curr && curr.id === userId) setCurrentSession(user);
   }
 }
 
@@ -210,6 +242,8 @@ export function updateUserBalance(userId: string, newBalance: number): void {
   if (user) {
     user.balance = newBalance;
     saveBankUsers(users);
+    const curr = getCurrentSession();
+    if (curr && curr.id === userId) setCurrentSession(user);
   }
 }
 
@@ -224,6 +258,8 @@ export function addTransaction(userId: string, tx: Omit<BankTransaction, "id">):
     user.transactions.unshift(fullTx);
     user.balance += tx.amount;
     saveBankUsers(users);
+    const curr = getCurrentSession();
+    if (curr && curr.id === userId) setCurrentSession(user);
   }
 }
 
@@ -237,9 +273,8 @@ export function getCurrentSession(): BankUser | null {
   if (typeof window === "undefined") return INITIAL_DEMO_USER;
   try {
     const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
-    if (!raw) return INITIAL_DEMO_USER; // Default to demo user for immediate observation
+    if (!raw) return INITIAL_DEMO_USER;
     const parsed = JSON.parse(raw);
-    // Refresh with latest data from storage
     const latest = getBankUsers().find((u) => u.id === parsed.id);
     return latest || parsed;
   } catch {
