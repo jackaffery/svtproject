@@ -34,6 +34,7 @@ describe("World map country names", () => {
     expect(countryNames).toHaveLength(countries.length);
     expect(new Set(countryNames).size).toBe(countries.length);
     expect(countryNames[0]).toBe("Afghanistan");
-    expect(countryNames[countryNames.length - 1]).toBe("eSwatini");
+    expect(countryNames[countryNames.length - 1]).toBe("Zimbabwe");
+    expect(countryNames).toContain("eSwatini");
   });
 });
