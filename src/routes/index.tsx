@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Lock, Eye, Users } from "lucide-react";
 import heroAsset from "@/assets/hero-meeting.png.asset.json";
 import pamelaAsset from "@/assets/client-advisor.png.asset.json";
-import { FloatingCta, meta, Section } from "@/components/site";
+import { meta, Section } from "@/components/site";
 import { WorldMap } from "@/components/world-map";
 import { services } from "@/lib/services";
 import { countryNames, mapLabels, mapMarkers, TRADE_PARTNERS } from "@/lib/world-map-data";
@@ -163,7 +163,6 @@ function Index() {
         </div>
       </section>
 
-      <FloatingCta />
     </>
   );
 }
