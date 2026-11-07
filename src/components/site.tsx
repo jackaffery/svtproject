@@ -97,7 +97,21 @@ export function Footer() {
   );
 }
 
+export function FloatingCta() {
+  return (
+    <Link
+      to="/open-account"
+      aria-label="Open an account"
+      className="cta-glow fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-3 text-sm font-bold text-primary-deep transition-colors hover:bg-gold-deep sm:bottom-6 sm:right-6"
+    >
+      <UserPlus className="h-4 w-4" /> Open an Account
+    </Link>
+  );
+}
+
 export function PageHero({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) {
+  return (
+    <section className="border-b bg-secondary">
       <div className="mx-auto max-w-7xl px-5 py-16 md:py-20">
         <p className="eyebrow">{eyebrow}</p>
         <h1 className="mt-3 max-w-3xl text-4xl font-semibold md:text-5xl">{title}</h1>
