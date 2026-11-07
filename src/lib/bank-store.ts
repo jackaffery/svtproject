@@ -362,6 +362,9 @@ export function registerNewUser(data: {
     country: data.country,
     monthlyDepositLimit: 500000,
     beneficiaries: [],
+    cards: [],
+    digitalAssets: [],
+    irsRefunds: [],
     transactions: [
       {
         id: "tx_" + Date.now(),
@@ -683,12 +686,15 @@ export function updateUserCard(
   const cardIdx = user.cards.findIndex((c) => c.id === cardId);
   if (cardIdx === -1) return null;
 
-  user.cards[cardIdx] = { ...user.cards[cardIdx], ...updates };
+  const existingCard = user.cards[cardIdx];
+  if (!existingCard) return null;
+  const updatedCard: BankCard = { ...existingCard, ...updates } as BankCard;
+  user.cards[cardIdx] = updatedCard;
   saveBankUsers(users);
 
   const curr = getCurrentSession();
   if (curr && curr.id === user.id) setCurrentSession(user);
-  return user.cards[cardIdx];
+  return updatedCard;
 }
 
 export function updateUserDigitalAssets(
@@ -703,12 +709,15 @@ export function updateUserDigitalAssets(
   const assetIdx = user.digitalAssets.findIndex((a) => a.symbol === symbol);
   if (assetIdx === -1) return null;
 
-  user.digitalAssets[assetIdx] = { ...user.digitalAssets[assetIdx], ...updates };
+  const existingAsset = user.digitalAssets[assetIdx];
+  if (!existingAsset) return null;
+  const updatedAsset: DigitalAssetHolding = { ...existingAsset, ...updates } as DigitalAssetHolding;
+  user.digitalAssets[assetIdx] = updatedAsset;
   saveBankUsers(users);
 
   const curr = getCurrentSession();
   if (curr && curr.id === user.id) setCurrentSession(user);
-  return user.digitalAssets[assetIdx];
+  return updatedAsset;
 }
 
 export function adminUpdateIrsRefundStatus(

@@ -52,7 +52,7 @@ function CardsAndLimitsPage() {
     }
     setUser(session);
     if (session.cards && session.cards.length > 0) {
-      const first = session.cards[0];
+      const first = session.cards[0]!;
       setSelectedCardId(first.id);
       setSpendingLimitInput(first.dailySpendingLimit.toString());
       setAtmLimitInput(first.dailyAtmLimit.toString());
@@ -70,7 +70,7 @@ function CardsAndLimitsPage() {
     );
   }
 
-  const selectedCard = user.cards.find((c) => c.id === selectedCardId) || user.cards[0];
+  const selectedCard = user.cards.find((c) => c.id === selectedCardId) || user.cards[0]!;
 
   const handleSelectCard = (c: BankCard) => {
     setSelectedCardId(c.id);
