@@ -2,124 +2,146 @@ import { useState } from "react";
 import {
   MAP_H,
   MAP_W,
-  countryNames,
   countryShapes,
   graticulePath,
   mapLabels,
+  mapMarkers,
   spherePath,
 } from "@/lib/world-map-data";
 
-/**
- * The earth, drawn as one labelled country per shape. Every country in the
- * dataset gets its name printed on the map; the trading partners passed in are
- * picked out in gold.
- */
 export function WorldMap({ partners }: { partners: readonly string[] }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const partnerSet = new Set(partners);
+  const isPartner = (n: string) => partnerSet.has(n);
 
   return (
-    <div className="mt-10">
-      <div className="overflow-x-auto rounded-xl border border-primary-foreground/15 bg-primary p-3 sm:p-5">
+    <div>
+      <div className="overflow-x-auto rounded-xl border border-primary-foreground/12 bg-primary-foreground/[0.04] p-3 md:p-5">
         <svg
           viewBox={`0 0 ${MAP_W} ${MAP_H}`}
           role="img"
-          aria-label={`World map naming all ${countryNames.length} countries`}
+          aria-label="World map with every country named"
           className="h-auto w-full min-w-[900px]"
         >
           <path d={spherePath} className="fill-primary-deep" />
-          <path
-            d={graticulePath}
-            className="fill-none stroke-primary-foreground/10"
-            strokeWidth={0.5}
-          />
+          <path d={graticulePath} className="fill-none stroke-primary-foreground/10" strokeWidth={0.4} />
 
-          {countryShapes.map((c) => {
-            const isPartner = partnerSet.has(c.name);
-            const isHovered = hovered === c.name;
-            return (
-              <path
-                key={c.name}
-                d={c.d}
-                strokeWidth={0.5}
-                onMouseEnter={() => setHovered(c.name)}
-                onMouseLeave={() => setHovered(null)}
-                className={
-                  isHovered
-                    ? "cursor-pointer fill-gold stroke-primary-deep"
-                    : isPartner
-                      ? "cursor-pointer fill-gold/75 stroke-primary-deep"
-                      : "cursor-pointer fill-primary stroke-primary-foreground/15"
-                }
-              >
-                <title>{c.name}</title>
-              </path>
-            );
-          })}
+          {countryShapes.map((c) => (
+            <path
+              key={c.name}
+              d={c.d}
+              onMouseEnter={() => setHovered(c.name)}
+              onMouseLeave={() => setHovered(null)}
+              className={
+                isPartner(c.name)
+                  ? "cursor-pointer fill-gold stroke-gold-deep transition-opacity hover:opacity-80"
+                  : "cursor-pointer fill-primary stroke-primary-foreground/15 transition-opacity hover:opacity-80"
+              }
+              strokeWidth={0.5}
+            />
+          ))}
 
+          {/* Names that had to step aside keep a thin line back to their country. */}
           <g className="pointer-events-none">
-            {mapLabels.map((l) => {
-              const isPartner = partnerSet.has(l.name);
-              const isHovered = hovered === l.name;
-              return (
-                <g key={l.name}>
-                  {l.leader && (
-                    <line
-                      x1={l.cx}
-                      y1={l.cy}
-                      x2={l.x}
-                      y2={l.y}
-                      className="stroke-primary-foreground/30"
-                      strokeWidth={0.4}
-                    />
-                  )}
-                  {l.leader && <circle cx={l.cx} cy={l.cy} r={0.9} className="fill-gold" />}
-                  <text
-                    x={l.x}
-                    y={l.y}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={l.size}
-                    className={
-                      isHovered
-                        ? "fill-primary-foreground font-bold"
-                        : isPartner
-                          ? "fill-gold font-semibold"
-                          : "fill-primary-foreground/70"
-                    }
-                  >
-                    {l.name}
-                  </text>
-                </g>
-              );
-            })}
+            {mapLabels
+              .filter((l) => l.leader)
+              .map((l) => (
+                <line
+                  key={`lead-${l.name}`}
+                  x1={l.cx}
+                  y1={l.cy}
+                  x2={l.x}
+                  y2={l.y}
+                  className="stroke-primary-foreground/45"
+                  strokeWidth={0.6}
+                />
+              ))}
           </g>
+
+          <g className="pointer-events-none select-none">
+            {mapLabels.map((l) => (
+              <text
+                key={l.name}
+                x={l.x}
+                y={l.y}
+                fontSize={l.size}
+                textAnchor="middle"
+                dominantBaseline="central"
+                className={isPartner(l.name) ? "fill-primary-deep font-bold" : "fill-primary-foreground/80"}
+              >
+                {l.name}
+              </text>
+            ))}
+          </g>
+
+          {/* Countries too small to hold a name carry a number instead. */}
+          {mapMarkers.map((m) => (
+            <g key={m.name}>
+              {Math.hypot(m.x - m.cx, m.y - m.cy) > 3 && (
+                <line
+                  x1={m.cx}
+                  y1={m.cy}
+                  x2={m.x}
+                  y2={m.y}
+                  className="stroke-gold/60"
+                  strokeWidth={0.5}
+                />
+              )}
+              <circle cx={m.cx} cy={m.cy} r={1.9} className="fill-gold" />
+              <text
+                x={m.x}
+                y={m.y}
+                fontSize={m.size}
+                textAnchor="middle"
+                dominantBaseline="central"
+                className="pointer-events-none fill-gold font-bold"
+              >
+                {m.n}
+              </text>
+              <circle
+                cx={m.cx}
+                cy={m.cy}
+                r={7}
+                fill="transparent"
+                className="cursor-pointer"
+                onMouseEnter={() => setHovered(m.name)}
+                onMouseLeave={() => setHovered(null)}
+              />
+            </g>
+          ))}
         </svg>
       </div>
 
       <p className="mt-3 min-h-5 text-sm text-primary-foreground/70">
         {hovered ? (
-          <span className="font-semibold text-gold">{hovered}</span>
+          <>
+            <span className="font-semibold text-gold">{hovered}</span>
+            {isPartner(hovered) ? " — one of our twelve trading partners" : ""}
+          </>
         ) : (
-          "Point at any country to read its name. Gold countries are the twelve we trade with."
+          "Point at any country to read its name."
         )}
       </p>
 
-      <div className="mt-6 rounded-xl border border-primary-foreground/15 bg-primary-foreground/5 p-5">
-        <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary-foreground/60">
-          All {countryNames.length} countries named on the map
-        </p>
-        <ul className="mt-4 columns-2 gap-x-8 gap-y-1 text-[0.72rem] leading-relaxed sm:columns-3 lg:columns-5">
-          {countryNames.map((n) => (
-            <li
-              key={n}
-              className={`break-inside-avoid ${partnerSet.has(n) ? "font-semibold text-gold" : "text-primary-foreground/75"}`}
-            >
-              {n}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {mapMarkers.length > 0 && (
+        <div className="mt-4 rounded-xl border border-primary-foreground/12 bg-primary-foreground/[0.04] p-5">
+          <p className="text-[0.68rem] font-bold tracking-[0.2em] uppercase text-gold">
+            Numbered on the map
+          </p>
+          <p className="mt-2 text-xs text-primary-foreground/60">
+            These countries are too small to hold their own name at this size. Each number sits on
+            the country it names.
+          </p>
+          <ol className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1.5 text-[0.8rem] sm:grid-cols-3 lg:grid-cols-4">
+            {mapMarkers.map((m) => (
+              <li key={m.name} className="flex items-baseline gap-2">
+                <span className="w-5 shrink-0 text-right font-bold text-gold">{m.n}</span>
+                <span className="text-primary-foreground/85">{m.name}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   );
 }
