@@ -10,9 +10,9 @@ export const Route = createFileRoute("/verify-email")({
       "Verify Email — Stronghold Vault Trust Institution",
       "One-time verification link for opening Stronghold Vault Trust accounts."
     ),
-  validateSearch: (search: Record<string, unknown>): { token?: string; email?: string } => ({
-    token: typeof search.token === "string" ? search.token : undefined,
-    email: typeof search.email === "string" ? search.email : undefined,
+  validateSearch: (search: Record<string, unknown>): { token?: string | undefined; email?: string | undefined } => ({
+    token: typeof search["token"] === "string" ? search["token"] : undefined,
+    email: typeof search["email"] === "string" ? search["email"] : undefined,
   }),
   component: VerifyEmailPage,
 });
