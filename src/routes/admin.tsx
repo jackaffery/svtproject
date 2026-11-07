@@ -24,6 +24,8 @@ import {
   FileText,
   BadgeAlert,
   Send,
+  History,
+  Settings,
 } from "lucide-react";
 import { meta } from "@/components/site";
 import {
@@ -35,7 +37,9 @@ import {
   setCurrentSession,
   registerNewUser,
   adminUpdateIrsRefundStatus,
+  updateUserCard,
   type BankUser,
+  type BankCard,
   type IrsRefundRecord,
 } from "@/lib/bank-store";
 
@@ -53,6 +57,25 @@ function MasterSoloAdminPage() {
   const [search, setSearch] = useState("");
   const [filterTab, setFilterTab] = useState<"All" | "Pending" | "Under Review" | "Approved" | "Declined">("All");
   const [activeMenuUserId, setActiveMenuUserId] = useState<string | null>(null);
+
+  // Active Spot Section in Admin (matching sidebar items from screenshot)
+  const [activeAdminSection, setActiveAdminSection] = useState<
+    "users" | "history" | "deposits" | "loans" | "cards" | "irs" | "email" | "administrators" | "settings"
+  >("users");
+
+  // Selected User for Card Limit Adjustment
+  const [selectedUserForCard, setSelectedUserForCard] = useState<BankUser | null>(null);
+  const [cardDailyLimit, setCardDailyLimit] = useState("5000");
+
+  // Email composer modal
+  const [emailUser, setEmailUser] = useState<BankUser | null>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+
+  // Institutional Settings State
+  const [wireApprovalThreshold, setWireApprovalThreshold] = useState("100000");
+  const [twoFactorEnforcement, setTwoFactorEnforcement] = useState(true);
+  const [smtpStatus] = useState("Operational (256-bit TLS)");
 
   // Modal states
   const [editingUser, setEditingUser] = useState<BankUser | null>(null);
@@ -210,6 +233,12 @@ function MasterSoloAdminPage() {
   const approvedCount = users.filter((u) => u.status === "active" || u.applicationStatus === "approved").length;
   const pendingCount = users.filter((u) => u.status === "pending_verification").length;
   const declinedCount = users.filter((u) => u.status === "suspended" || u.applicationStatus === "declined").length;
+  const totalInstitutionDeposits = users.reduce((acc, u) => acc + (u.balance || 0) + (u.savingsBalance || 0), 0);
+
+  // All transactions flattened for Transaction History spot
+  const allTransactions = users.flatMap((u) =>
+    (u.transactions || []).map((t) => ({ ...t, clientName: u.fullName, clientAccount: u.accountNumber }))
+  ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="flex min-h-screen bg-[#f3f4f6]">
@@ -237,65 +266,148 @@ function MasterSoloAdminPage() {
 
         {/* Sidebar Navigation */}
         <nav className="p-3 space-y-1 text-xs font-semibold text-gray-700">
-          <Link
-            to="/admin"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#0a1b33] bg-gray-100"
+          {/* Manage Users */}
+          <button
+            onClick={() => setActiveAdminSection("users")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 font-bold transition-colors ${
+              activeAdminSection === "users" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            <Users className="h-4 w-4 text-red-600" />
-            <span>Manage Users</span>
-          </Link>
+            <div className="flex items-center gap-3">
+              <Users className="h-4 w-4 text-red-600" />
+              <span>Manage Users</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "users" ? "rotate-90" : ""}`} />
+          </button>
 
+          {/* Wire & Transfer Operations */}
           <Link
             to="/transfer"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-100"
+            className="flex items-center justify-between rounded-lg px-3 py-2.5 text-gray-700 hover:bg-gray-100"
           >
-            <Send className="h-4 w-4 text-gold" />
-            <span>Wire & Transfer Operations</span>
+            <div className="flex items-center gap-3">
+              <Send className="h-4 w-4 text-gold" />
+              <span>Wire & Transfer Operations</span>
+            </div>
+            <ChevronRight className="h-3 w-3 text-gray-400" />
           </Link>
 
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-100"
-          >
-            <DollarSign className="h-4 w-4" />
-            <span>Users Deposits</span>
-          </Link>
-
+          {/* Transaction History (New Spot from screenshot) */}
           <button
-            onClick={() => showToast("Loan Applications module active — 0 outstanding requests.")}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100"
+            onClick={() => setActiveAdminSection("history")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "history" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            <Building2 className="h-4 w-4" />
-            <span>Loan Applications</span>
+            <div className="flex items-center gap-3">
+              <History className="h-4 w-4 text-indigo-600" />
+              <span>Transaction History</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "history" ? "rotate-90" : ""}`} />
           </button>
 
+          {/* Users Deposits */}
           <button
-            onClick={() => showToast("Virtual Cards module active — 2 cards provisioned.")}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100"
+            onClick={() => setActiveAdminSection("deposits")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "deposits" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            <CreditCard className="h-4 w-4" />
-            <span>Virtual Cards</span>
+            <div className="flex items-center gap-3">
+              <DollarSign className="h-4 w-4 text-emerald-600" />
+              <span>Users Deposits</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "deposits" ? "rotate-90" : ""}`} />
           </button>
 
+          {/* Loan Applications */}
           <button
-            onClick={() => setShowIrsModal(true)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100 text-[#0a1b33] font-bold"
+            onClick={() => setActiveAdminSection("loans")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "loans" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            <FileText className="h-4 w-4 text-emerald-600" />
-            <span>IRS Refunds Spot</span>
+            <div className="flex items-center gap-3">
+              <Building2 className="h-4 w-4 text-blue-600" />
+              <span>Loan Applications</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "loans" ? "rotate-90" : ""}`} />
           </button>
 
+          {/* Virtual Cards */}
           <button
-            onClick={() => showToast("Automated Email Gateway: SMTP 256-bit Active.")}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100"
+            onClick={() => setActiveAdminSection("cards")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "cards" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            <Mail className="h-4 w-4" />
-            <span>Email Services</span>
+            <div className="flex items-center gap-3">
+              <CreditCard className="h-4 w-4 text-purple-600" />
+              <span>Virtual Cards</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "cards" ? "rotate-90" : ""}`} />
           </button>
 
+          {/* IRS Refunds Spot */}
+          <button
+            onClick={() => setActiveAdminSection("irs")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "irs" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <FileText className="h-4 w-4 text-emerald-600" />
+              <span>IRS Refunds</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "irs" ? "rotate-90" : ""}`} />
+          </button>
+
+          {/* Email Services */}
+          <button
+            onClick={() => setActiveAdminSection("email")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "email" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Mail className="h-4 w-4 text-amber-600" />
+              <span>Email Services</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "email" ? "rotate-90" : ""}`} />
+          </button>
+
+          {/* Administrator(s) (New Spot from screenshot) */}
+          <button
+            onClick={() => setActiveAdminSection("administrators")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "administrators" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-4 w-4 text-[#0a1b33]" />
+              <span>Administrator(s)</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "administrators" ? "rotate-90" : ""}`} />
+          </button>
+
+          {/* Settings (New Spot from screenshot) */}
+          <button
+            onClick={() => setActiveAdminSection("settings")}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "settings" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Settings className="h-4 w-4 text-gray-600" />
+              <span>Settings</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "settings" ? "rotate-90" : ""}`} />
+          </button>
+
+          {/* Create New User */}
           <button
             onClick={() => setCreateUserModal(true)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100 text-primary font-bold"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100 text-primary font-bold pt-3"
           >
             <PlusCircle className="h-4 w-4 text-emerald-600" />
             <span>Create New User</span>
@@ -351,8 +463,13 @@ function MasterSoloAdminPage() {
 
         {/* Content Area */}
         <main className="flex-1 p-8 overflow-y-auto">
-          {/* Section Title */}
-          <div className="flex items-center justify-between">
+          {/* ============================================================== */}
+          {/* SECTION 1: MANAGE USERS SPOT (DEFAULT) */}
+          {/* ============================================================== */}
+          {activeAdminSection === "users" && (
+            <div>
+              {/* Section Title */}
+              <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="font-display text-2xl font-bold text-[#0a1b33]">New User Application(s)</h1>
@@ -588,8 +705,608 @@ function MasterSoloAdminPage() {
               </table>
             </div>
           </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 2: TRANSACTION HISTORY SPOT */}
+        {/* ============================================================== */}
+        {activeAdminSection === "history" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Institutional Transaction History</h1>
+                <p className="mt-1 text-xs text-gray-500">
+                  Audit ledger of all domestic wires, internal transfers, crypto conversions, and deposits across all bank accounts.
+                </p>
+              </div>
+              <span className="rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 font-mono text-xs font-bold text-indigo-700">
+                {allTransactions.length} Total Records
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
+              {allTransactions.length === 0 ? (
+                <div className="py-12 text-center text-gray-400 text-xs">
+                  No transactions recorded in institution ledger yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="border-b bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                      <tr>
+                        <th className="p-3">Reference & Date</th>
+                        <th className="p-3">Client</th>
+                        <th className="p-3">Description</th>
+                        <th className="p-3">Type</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 font-mono">
+                      {allTransactions.map((tx) => (
+                        <tr key={tx.id} className="hover:bg-gray-50/60">
+                          <td className="p-3">
+                            <p className="font-bold text-gray-800">{tx.reference}</p>
+                            <p className="text-[10px] text-gray-400 font-sans">{new Date(tx.date).toLocaleString()}</p>
+                          </td>
+                          <td className="p-3 font-sans">
+                            <p className="font-bold text-[#0a1b33]">{tx.clientName}</p>
+                            <p className="text-[11px] text-gray-400 font-mono">{tx.clientAccount}</p>
+                          </td>
+                          <td className="p-3 font-sans max-w-xs truncate text-gray-700">{tx.description}</td>
+                          <td className="p-3 font-sans">
+                            <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-700">
+                              {tx.type}
+                            </span>
+                          </td>
+                          <td className="p-3 font-sans">
+                            <span
+                              className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
+                                tx.status === "completed"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : tx.status === "pending"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {tx.status}
+                            </span>
+                          </td>
+                          <td
+                            className={`p-3 text-right font-bold text-sm ${
+                              tx.amount >= 0 ? "text-emerald-600" : "text-gray-900"
+                            }`}
+                          >
+                            {tx.amount >= 0 ? "+" : ""}${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 3: USERS DEPOSITS SPOT */}
+        {/* ============================================================== */}
+        {activeAdminSection === "deposits" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Users Deposits & Liquidity Control</h1>
+                <p className="mt-1 text-xs text-gray-500">
+                  Direct administration of checking, savings, and reserve liquidity for all accounts.
+                </p>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 font-mono">
+                <span className="text-[10px] font-bold uppercase text-emerald-700 block">Total Liquidity</span>
+                <span className="text-lg font-extrabold text-emerald-800">
+                  ${totalInstitutionDeposits.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {users.map((u) => (
+                <div key={u.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-base text-[#0a1b33] capitalize">{u.fullName}</span>
+                      <span className="font-mono text-xs rounded bg-gray-100 px-2 py-0.5 text-gray-600">
+                        Acct #{u.accountNumber}
+                      </span>
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
+                        {u.accountType}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">{u.email} • {u.phone}</p>
+                  </div>
+
+                  <div className="flex items-center gap-6 text-right">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-gray-400 block">Advantage Checking</span>
+                      <span className="font-mono text-base font-bold text-[#0a1b33]">
+                        ${u.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-gray-400 block">High-Yield Savings</span>
+                      <span className="font-mono text-base font-bold text-emerald-600">
+                        ${u.savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => openEditModal(u)}
+                      className="rounded-lg bg-[#0a1b33] px-4 py-2 text-xs font-bold text-white hover:bg-[#122b52] shadow-xs"
+                    >
+                      Adjust Balance
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 4: LOAN APPLICATIONS SPOT */}
+        {/* ============================================================== */}
+        {activeAdminSection === "loans" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Commercial & Personal Loan Applications</h1>
+              <p className="mt-1 text-xs text-gray-500">
+                Manage institutional credit facilities, commercial real estate financing, and line of credit underwriting.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs text-xs space-y-4">
+              <div className="flex items-center justify-between border-b pb-4">
+                <div>
+                  <h3 className="font-bold text-[#0a1b33] text-sm">Underwriting Queue</h3>
+                  <p className="text-gray-500">Current loan requests submitted through online portals.</p>
+                </div>
+                <span className="rounded-full bg-blue-100 text-blue-800 px-3 py-1 font-bold">0 Pending Filings</span>
+              </div>
+
+              <div className="py-8 text-center text-gray-400">
+                <Building2 className="mx-auto h-10 w-10 text-gray-300 mb-2" />
+                <p className="font-semibold text-gray-600">All institutional loan requests are fully adjudicated.</p>
+                <p className="text-[11px] text-gray-400 mt-1">To issue a private loan credit, adjust the client's balance directly under Users Deposits.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 5: VIRTUAL CARDS SPOT */}
+        {/* ============================================================== */}
+        {activeAdminSection === "cards" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Virtual & Physical Cards Management</h1>
+                <p className="mt-1 text-xs text-gray-500">
+                  Inspect provisioned Visa/Mastercard debit and credit cards, adjust daily spending limits, freeze, or issue new cards.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {users.map((u) => (
+                <div key={u.id} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <div>
+                      <h3 className="font-bold text-sm text-[#0a1b33] capitalize">{u.fullName}</h3>
+                      <p className="text-xs text-gray-400">Cardholder Profile • {u.email}</p>
+                    </div>
+                    <span className="rounded-full bg-purple-100 text-purple-800 px-2.5 py-0.5 text-xs font-bold">
+                      {(u.cards || []).length} Provisioned
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(u.cards || []).map((card) => (
+                      <div key={card.id} className="rounded-xl border border-gray-200 p-4 bg-gray-50/50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs uppercase tracking-wide text-gray-700">
+                            {card.type} Card
+                          </span>
+                          <span
+                            className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
+                              card.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {card.status}
+                          </span>
+                        </div>
+
+                        <p className="font-mono text-base font-extrabold text-[#0a1b33] tracking-widest">{card.cardNumber}</p>
+                        <div className="flex justify-between text-[11px] text-gray-500 font-mono">
+                          <span>EXP: {card.expiryDate}</span>
+                          <span>CVV: {card.cvv}</span>
+                          <span>PIN: {card.pin}</span>
+                        </div>
+
+                        <div className="border-t pt-2 flex items-center justify-between text-xs">
+                          <span className="text-gray-500 font-medium">Daily Limit:</span>
+                          <span className="font-bold font-mono text-[#0a1b33]">${card.dailySpendingLimit.toLocaleString()}</span>
+                        </div>
+
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => {
+                              const next = card.status === "active" ? "frozen" : "active";
+                              updateUserCard(u.id, card.id, { status: next });
+                              loadData();
+                              showToast(`Card ${card.cardNumber} status set to ${next.toUpperCase()}`);
+                            }}
+                            className="flex-1 rounded border border-gray-300 bg-white py-1.5 text-[11px] font-bold text-gray-700 hover:bg-gray-50"
+                          >
+                            {card.status === "active" ? "Freeze Card" : "Unfreeze Card"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedUserForCard(u);
+                              setCardDailyLimit(card.dailySpendingLimit.toString());
+                            }}
+                            className="rounded bg-[#0a1b33] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#122b52]"
+                          >
+                            Set Limit
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 6: IRS REFUNDS SPOT */}
+        {/* ============================================================== */}
+        {activeAdminSection === "irs" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="font-display text-2xl font-bold text-[#0a1b33]">IRS Federal Tax Refund Treasury Spot</h1>
+                <p className="mt-1 text-xs text-gray-500">
+                  Verify Treasury trace numbers, approve direct deposits, and audit federal returns directly to customer accounts.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowIrsModal(true)}
+                className="rounded-lg bg-[#0a1b33] px-4 py-2 font-bold text-xs text-white hover:bg-[#122b52]"
+              >
+                Open Full Treasury Desk
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {users.map((u) => (
+                <div key={u.id} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <div>
+                      <span className="font-bold text-base text-[#0a1b33] capitalize">{u.fullName}</span>
+                      <span className="ml-3 font-mono text-xs text-gray-500">Acct #{u.accountNumber}</span>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-700">Checking: ${u.balance.toLocaleString()}</span>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {(u.irsRefunds || []).map((refund) => (
+                      <div key={refund.id} className="flex items-center justify-between rounded-xl border p-4 bg-gray-50/50">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-[#0a1b33]">{refund.taxYear}</span>
+                            <span
+                              className={`rounded px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                                refund.depositStatus === "deposited"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {refund.depositStatus}
+                            </span>
+                          </div>
+                          <p className="font-mono text-xs text-gray-500 mt-1">Trace #{refund.treasuryTraceNumber}</p>
+                          {refund.notes && <p className="text-xs text-gray-600 mt-1">{refund.notes}</p>}
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <span className="font-mono text-base font-bold text-emerald-600">
+                            +${refund.refundAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </span>
+                          {refund.depositStatus !== "deposited" && (
+                            <button
+                              onClick={() => {
+                                adminUpdateIrsRefundStatus(
+                                  u.id,
+                                  refund.id,
+                                  "deposited",
+                                  "Treasury electronic deposit confirmed by Solo Admin."
+                                );
+                                loadData();
+                                showToast(`Credited IRS refund of $${refund.refundAmount.toLocaleString()} to ${u.fullName}`);
+                              }}
+                              className="rounded-lg bg-emerald-600 px-4 py-2 font-bold text-white hover:bg-emerald-700 text-xs shadow-xs"
+                            >
+                              Approve & Deposit
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 7: EMAIL SERVICES SPOT */}
+        {/* ============================================================== */}
+        {activeAdminSection === "email" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Automated Institutional Email Gateway</h1>
+              <p className="mt-1 text-xs text-gray-500">
+                SMTP 256-bit automated email notifications, statement dispatch, and client correspondence.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border bg-white p-6 shadow-xs text-xs">
+              <h3 className="font-bold text-[#0a1b33] mb-4 text-sm">Quick Client Email Dispatch</h3>
+              <div className="space-y-3">
+                {users.map((u) => (
+                  <div key={u.id} className="flex items-center justify-between rounded-xl border p-3 bg-gray-50">
+                    <div>
+                      <p className="font-bold text-[#0a1b33] capitalize">{u.fullName}</p>
+                      <p className="text-gray-500">{u.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEmailUser(u);
+                        setEmailSubject("Institutional Statement Notification");
+                        setEmailBody(`Hello ${u.fullName},\n\nYour monthly Stronghold Vault Trust statement is ready for review in your customer portal.\n\nBest regards,\nStronghold Administration`);
+                      }}
+                      className="rounded-lg bg-[#0a1b33] px-3.5 py-1.5 font-bold text-white hover:bg-[#122b52]"
+                    >
+                      Compose Message
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 8: ADMINISTRATOR(S) SPOT */}
+        {/* ============================================================== */}
+        {activeAdminSection === "administrators" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Administrator(s) Management</h1>
+              <p className="mt-1 text-xs text-gray-500">
+                Manage master administrative accounts, solo portal credentials, security keys, and privileged session tokens.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-[#0a1b33] text-gold font-bold text-lg">
+                    A
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-[#0a1b33]">Master Solo Administrator</h3>
+                    <p className="text-xs text-gray-500">Primary System Controller</p>
+                  </div>
+                  <span className="ml-auto rounded bg-red-100 text-red-800 font-extrabold text-[10px] px-2 py-0.5 uppercase">
+                    Active
+                  </span>
+                </div>
+
+                <div className="border-t pt-3 space-y-2 text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-sans">Authorized Username:</span>
+                    <span className="font-bold text-[#0a1b33]">support@svt.online</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-sans">Security Credential:</span>
+                    <span className="font-bold text-emerald-700">SHA-256 Provisioned</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-sans">Role Level:</span>
+                    <span className="font-bold text-gray-800">Root Superuser</span>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={() => showToast("Master Administrator credentials verified and secured.")}
+                    className="w-full rounded-lg bg-[#0a1b33] py-2 text-xs font-bold text-white hover:bg-[#122b52]"
+                  >
+                    Audit Session Security
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-6 flex flex-col items-center justify-center text-center space-y-3">
+                <ShieldCheck className="h-10 w-10 text-gray-400" />
+                <div>
+                  <h4 className="font-bold text-sm text-gray-700">Add Additional Administrator</h4>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">
+                    Solo Admin configuration enforces single-custody security. Additional officer keys require board sign-off.
+                  </p>
+                </div>
+                <button
+                  onClick={() => showToast("Single-Officer Custody mode is enforced by Institution Protocol.")}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-100"
+                >
+                  Request Dual-Custody Key
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 9: SETTINGS SPOT */}
+        {/* ============================================================== */}
+        {activeAdminSection === "settings" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Institutional Control & Policy Settings</h1>
+              <p className="mt-1 text-xs text-gray-500">
+                Global limits, wire clearance protocols, SMTP gateways, and FDIC security settings for Stronghold Vault Trust Institution.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-6 text-xs text-gray-700">
+              <div className="border-b pb-4">
+                <h3 className="font-bold text-sm text-[#0a1b33] mb-1">Wire & Transfer Thresholds</h3>
+                <p className="text-gray-500 mb-3">Outgoing wires exceeding this limit trigger automated administrator review.</p>
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-gray-600">$</span>
+                  <input
+                    type="number"
+                    value={wireApprovalThreshold}
+                    onChange={(e) => setWireApprovalThreshold(e.target.value)}
+                    className="rounded-lg border border-gray-300 p-2 font-mono font-bold text-sm text-[#0a1b33] w-48"
+                  />
+                  <button
+                    onClick={() => showToast(`Wire approval threshold set to $${Number(wireApprovalThreshold).toLocaleString()}`)}
+                    className="rounded-lg bg-[#0a1b33] px-4 py-2 font-bold text-white hover:bg-[#122b52]"
+                  >
+                    Save Threshold
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-b pb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-[#0a1b33] mb-1">Two-Factor Authentication Enforcement</h3>
+                  <p className="text-gray-500">Mandate 4-digit PIN verification on customer external wire dispatch.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setTwoFactorEnforcement(!twoFactorEnforcement);
+                    showToast(`Two-factor enforcement: ${!twoFactorEnforcement ? "ENABLED" : "DISABLED"}`);
+                  }}
+                  className={`rounded-full px-4 py-1.5 font-bold ${
+                    twoFactorEnforcement ? "bg-emerald-100 text-emerald-800" : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  {twoFactorEnforcement ? "Enforced (Active)" : "Optional"}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-[#0a1b33] mb-1">Automated SMTP Gateway</h3>
+                  <p className="text-gray-500">TLS 256-bit automated email correspondence dispatch server status.</p>
+                </div>
+                <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-md">
+                  {smtpStatus}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
         </main>
       </div>
+
+      {/* Set Card Limit Modal */}
+      {selectedUserForCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-bold text-[#0a1b33]">Set Daily Spending Limit</h3>
+              <button onClick={() => setSelectedUserForCard(null)} className="text-gray-400 hover:text-gray-700 font-bold text-base">✕</button>
+            </div>
+
+            <p className="text-gray-500">Client: <strong className="text-[#0a1b33]">{selectedUserForCard.fullName}</strong></p>
+
+            <div>
+              <label className="font-bold uppercase text-gray-500">Daily Spending Limit ($ USD)</label>
+              <input
+                type="number"
+                value={cardDailyLimit}
+                onChange={(e) => setCardDailyLimit(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-base font-mono font-bold text-[#0a1b33]"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <button onClick={() => setSelectedUserForCard(null)} className="rounded border px-4 py-2 font-bold text-gray-600">Cancel</button>
+              <button
+                onClick={() => {
+                  const lim = parseFloat(cardDailyLimit) || 5000;
+                  if (selectedUserForCard.cards && selectedUserForCard.cards[0]) {
+                    updateUserCard(selectedUserForCard.id, selectedUserForCard.cards[0].id, {
+                      dailySpendingLimit: lim,
+                    });
+                    loadData();
+                    showToast(`Updated daily card limit to $${lim.toLocaleString()} for ${selectedUserForCard.fullName}`);
+                  }
+                  setSelectedUserForCard(null);
+                }}
+                className="rounded bg-[#0a1b33] px-5 py-2 font-bold text-white hover:bg-[#122b52]"
+              >
+                Save Limit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Composer Modal */}
+      {emailUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-bold text-[#0a1b33]">Send Email to {emailUser.fullName}</h3>
+              <button onClick={() => setEmailUser(null)} className="text-gray-400 hover:text-gray-700 text-base font-bold">✕</button>
+            </div>
+
+            <div>
+              <label className="font-bold uppercase text-gray-500">Recipient Email</label>
+              <input type="text" disabled value={emailUser.email} className="mt-1 w-full rounded border bg-gray-100 p-2 text-gray-600 font-mono" />
+            </div>
+
+            <div>
+              <label className="font-bold uppercase text-gray-500">Subject</label>
+              <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className="mt-1 w-full rounded border p-2" />
+            </div>
+
+            <div>
+              <label className="font-bold uppercase text-gray-500">Message Body</label>
+              <textarea rows={5} value={emailBody} onChange={(e) => setEmailBody(e.target.value)} className="mt-1 w-full rounded border p-2" />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <button onClick={() => setEmailUser(null)} className="rounded border px-4 py-2 font-bold text-gray-600">Cancel</button>
+              <button
+                onClick={() => {
+                  showToast(`Email dispatched to ${emailUser.email} via SMTP Gateway!`);
+                  setEmailUser(null);
+                }}
+                className="rounded bg-[#0a1b33] px-5 py-2 font-bold text-white hover:bg-[#122b52]"
+              >
+                Send Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {editingUser && (
