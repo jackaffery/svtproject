@@ -123,6 +123,7 @@ function RootComponent() {
   const isDedicatedPortal =
     currentPath.startsWith("/dashboard") ||
     currentPath.startsWith("/account-profile") ||
+    currentPath.startsWith("/transfer") ||
     currentPath.startsWith("/admin");
 
   return (

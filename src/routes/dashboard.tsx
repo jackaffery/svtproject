@@ -286,8 +286,8 @@ function CustomerDashboardPage() {
 
         {/* Quick Action Navigation Buttons */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <button
-            onClick={() => setWireModal(true)}
+          <Link
+            to="/transfer"
             className="group flex items-start gap-4 rounded-2xl border border-primary-foreground/15 bg-[#0e2240] p-6 text-left transition-all hover:bg-[#122b52] hover:shadow-lg"
           >
             <div className="grid h-12 w-12 place-items-center rounded-xl bg-gold text-[#081528] shadow-md transition-transform group-hover:scale-105">
@@ -297,7 +297,7 @@ function CustomerDashboardPage() {
               <h3 className="text-base font-bold text-white">Transfers</h3>
               <p className="mt-1 text-xs text-primary-foreground/70">Domestic & international wire payments</p>
             </div>
-          </button>
+          </Link>
 
           <Link
             to="/account-profile"

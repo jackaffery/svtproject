@@ -243,6 +243,14 @@ function MasterSoloAdminPage() {
           </Link>
 
           <Link
+            to="/transfer"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-100"
+          >
+            <Send className="h-4 w-4 text-gold" />
+            <span>Wire & Transfer Operations</span>
+          </Link>
+
+          <Link
             to="/dashboard"
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-100"
           >

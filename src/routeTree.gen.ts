@@ -26,6 +26,7 @@ import { Route as SecurityRouteImport } from './routes/security'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SitemapRouteImport } from './routes/sitemap'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TransferRouteImport } from './routes/transfer'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 
 const IndexRoute = IndexRouteImport.update({
@@ -113,6 +114,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TransferRoute = TransferRouteImport.update({
+  id: '/transfer',
+  path: '/transfer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/sitemap': typeof SitemapRoute
   '/terms': typeof TermsRoute
+  '/transfer': typeof TransferRoute
   '/verify-email': typeof VerifyEmailRoute
 }
 export interface FileRoutesByTo {
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/sitemap': typeof SitemapRoute
   '/terms': typeof TermsRoute
+  '/transfer': typeof TransferRoute
   '/verify-email': typeof VerifyEmailRoute
 }
 export interface FileRoutesById {
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/sitemap': typeof SitemapRoute
   '/terms': typeof TermsRoute
+  '/transfer': typeof TransferRoute
   '/verify-email': typeof VerifyEmailRoute
 }
 export interface FileRouteTypes {
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap'
     | '/terms'
+    | '/transfer'
     | '/verify-email'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap'
     | '/terms'
+    | '/transfer'
     | '/verify-email'
   id:
     | '__root__'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap'
     | '/terms'
+    | '/transfer'
     | '/verify-email'
   fileRoutesById: FileRoutesById
 }
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SitemapRoute: typeof SitemapRoute
   TermsRoute: typeof TermsRoute
+  TransferRoute: typeof TransferRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
 }
 
@@ -385,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/transfer': {
+      id: '/transfer'
+      path: '/transfer'
+      fullPath: '/transfer'
+      preLoaderRoute: typeof TransferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify-email': {
       id: '/verify-email'
       path: '/verify-email'
@@ -413,6 +433,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SitemapRoute: SitemapRoute,
   TermsRoute: TermsRoute,
+  TransferRoute: TransferRoute,
   VerifyEmailRoute: VerifyEmailRoute,
 }
 export const routeTree = rootRouteImport

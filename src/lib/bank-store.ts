@@ -1,11 +1,40 @@
+export interface Beneficiary {
+  id: string;
+  name: string;
+  accountNumber: string;
+  bankName: string;
+  routingNumber?: string;
+  swiftBic?: string;
+  country: string;
+  currency: string;
+  transferType: "internal" | "domestic" | "international";
+  createdAt: string;
+}
+
 export interface BankTransaction {
   id: string;
   type: "deposit" | "withdrawal" | "transfer" | "wire" | "fee";
+  transferCategory?: "internal" | "domestic" | "international";
   description: string;
-  amount: number;
+  amount: number; // negative for deductions
+  fee: number;
+  totalDeduction: number;
+  currency: string;
+  exchangeRate?: number;
+  senderName: string;
+  senderAccount: string;
+  recipientName: string;
+  recipientAccount: string;
+  recipientBank: string;
+  routingNumber?: string;
+  swiftBic?: string;
+  recipientCountry?: string;
+  recipientAddress?: string;
+  estimatedDelivery?: string;
   date: string;
-  status: "completed" | "pending" | "declined";
+  status: "pending" | "processing" | "completed" | "failed" | "reversed";
   reference: string;
+  auditTrail?: { timestamp: string; action: string; performedBy: string }[];
 }
 
 export interface BankUser {
@@ -37,14 +66,39 @@ export interface BankUser {
   country: string;
   monthlyDepositLimit: number;
   transactions: BankTransaction[];
+  beneficiaries: Beneficiary[];
   btcBalance?: number;
   loginActivity?: { timestamp: string; ip: string; device: string; location: string }[];
 }
 
-const STORAGE_KEY = "svt_bank_users_v2";
-const SESSION_KEY = "svt_current_session_v2";
+const STORAGE_KEY = "svt_bank_users_v3";
+const SESSION_KEY = "svt_current_session_v3";
 
-// Matching user's exact profile from uploaded screenshots: Jack ray Affery
+const INITIAL_BENEFICIARIES: Beneficiary[] = [
+  {
+    id: "ben_01",
+    name: "JPMorgan Chase Escrow Custody",
+    accountNumber: "8841029411",
+    bankName: "JPMorgan Chase Bank, N.A.",
+    routingNumber: "021000021",
+    country: "United States",
+    currency: "USD",
+    transferType: "domestic",
+    createdAt: "2026-10-12",
+  },
+  {
+    id: "ben_02",
+    name: "Barclays Wealth Management UK",
+    accountNumber: "GB29BARC20000087654321",
+    bankName: "Barclays Bank PLC",
+    swiftBic: "BARCGB22",
+    country: "United Kingdom",
+    currency: "GBP",
+    transferType: "international",
+    createdAt: "2026-10-20",
+  },
+];
+
 const INITIAL_DEMO_USER: BankUser = {
   id: "usr_svt_234662",
   fullName: "jack ray affery",
@@ -72,6 +126,7 @@ const INITIAL_DEMO_USER: BankUser = {
   country: "United States",
   monthlyDepositLimit: 10000000,
   btcBalance: 0.00,
+  beneficiaries: INITIAL_BENEFICIARIES,
   loginActivity: [
     { timestamp: "2026-11-07 10:14 AM", ip: "192.168.1.42", device: "Chrome 130 / Windows 11", location: "Washington, D.C." },
     { timestamp: "2026-11-06 08:30 PM", ip: "192.168.1.42", device: "Chrome 130 / Windows 11", location: "Washington, D.C." },
@@ -80,11 +135,23 @@ const INITIAL_DEMO_USER: BankUser = {
     {
       id: "tx_01",
       type: "deposit",
+      transferCategory: "domestic",
       description: "Direct Federal Wire Deposit — Escrow Settlement",
       amount: 4564322.00,
+      fee: 0,
+      totalDeduction: 0,
+      currency: "USD",
+      senderName: "Federal Reserve Settlement Services",
+      senderAccount: "FED-00921448",
+      recipientName: "jack ray affery",
+      recipientAccount: "45643224892",
+      recipientBank: "Stronghold Vault Trust Institution",
       date: "2026-11-05",
       status: "completed",
       reference: "SVT-US-234662",
+      auditTrail: [
+        { timestamp: "2026-11-05 09:12:00 UTC", action: "Settled via Fedwire", performedBy: "SYSTEM_CORE" },
+      ],
     },
   ],
 };
@@ -175,15 +242,26 @@ export function registerNewUser(data: {
     state: data.state || "",
     country: data.country,
     monthlyDepositLimit: 500000,
+    beneficiaries: [],
     transactions: [
       {
         id: "tx_" + Date.now(),
         type: "deposit",
+        transferCategory: "domestic",
         description: "Initial Account Opening Deposit",
         amount: initDep,
+        fee: 0,
+        totalDeduction: 0,
+        currency: "USD",
+        senderName: "Institutional Intake",
+        senderAccount: "SVT-INTAKE",
+        recipientName: data.fullName,
+        recipientAccount: randomAcc,
+        recipientBank: "Stronghold Vault Trust Institution",
         date: new Date().toISOString().slice(0, 10),
         status: "completed",
         reference: `INIT-${randomAcc.slice(-6)}`,
+        auditTrail: [{ timestamp: new Date().toISOString(), action: "Initial Deposit Credited", performedBy: "SYSTEM" }],
       },
     ],
   };
@@ -201,7 +279,6 @@ export function updateUserDetails(userId: string, updates: Partial<BankUser>): B
   users[idx] = { ...users[idx], ...updates };
   saveBankUsers(users);
 
-  // If this is the current active session, sync it
   const current = getCurrentSession();
   if (current && current.id === userId) {
     setCurrentSession(users[idx]);
@@ -247,20 +324,188 @@ export function updateUserBalance(userId: string, newBalance: number): void {
   }
 }
 
-export function addTransaction(userId: string, tx: Omit<BankTransaction, "id">): void {
+/**
+ * Execute Money Transfer (Internal, Domestic, or International)
+ */
+export function executeMoneyTransfer(params: {
+  userId: string;
+  sourceAccount: "checking" | "savings";
+  transferCategory: "internal" | "domestic" | "international";
+  recipientName: string;
+  recipientAccount: string;
+  recipientBank: string;
+  routingNumber?: string;
+  swiftBic?: string;
+  recipientCountry?: string;
+  recipientAddress?: string;
+  recipientAccountType?: string;
+  amount: number;
+  fee: number;
+  currency: string;
+  exchangeRate?: number;
+  description: string;
+  saveBeneficiary?: boolean;
+}): { success: boolean; transaction?: BankTransaction; error?: string } {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === params.userId);
+  if (!user) return { success: false, error: "User record not found." };
+
+  const totalDeduction = params.amount + params.fee;
+  const currentFunds = params.sourceAccount === "checking" ? user.balance : user.savingsBalance;
+
+  if (currentFunds < totalDeduction) {
+    return { success: false, error: "Insufficient available balance including transfer fees." };
+  }
+
+  // Deduct from balance
+  if (params.sourceAccount === "checking") {
+    user.balance -= totalDeduction;
+  } else {
+    user.savingsBalance -= totalDeduction;
+  }
+
+  // Generate unique reference
+  const prefix = params.transferCategory === "internal" ? "SVT-INT" : params.transferCategory === "domestic" ? "SVT-ACH" : "SVT-WIRE";
+  const ref = `${prefix}-${Date.now().toString().slice(-6)}${Math.floor(1000 + Math.random() * 9000)}`;
+
+  // Delivery estimate
+  const estimatedDelivery =
+    params.transferCategory === "internal"
+      ? "Instant (Immediate Settlement)"
+      : params.transferCategory === "domestic"
+      ? "Same-Day Fedwire ACH"
+      : "1-2 Business Days via SWIFT GPI";
+
+  const newTx: BankTransaction = {
+    id: "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+    type: "wire",
+    transferCategory: params.transferCategory,
+    description: params.description || `Transfer to ${params.recipientName}`,
+    amount: -params.amount,
+    fee: params.fee,
+    totalDeduction,
+    currency: params.currency,
+    exchangeRate: params.exchangeRate,
+    senderName: user.fullName,
+    senderAccount: params.sourceAccount === "checking" ? user.accountNumber : (user.savingsAccountNumber || user.accountNumber),
+    recipientName: params.recipientName,
+    recipientAccount: params.recipientAccount,
+    recipientBank: params.recipientBank,
+    routingNumber: params.routingNumber,
+    swiftBic: params.swiftBic,
+    recipientCountry: params.recipientCountry,
+    recipientAddress: params.recipientAddress,
+    estimatedDelivery,
+    date: new Date().toISOString().slice(0, 10),
+    status: "completed",
+    reference: ref,
+    auditTrail: [
+      { timestamp: new Date().toISOString(), action: "Authorized by Client Security PIN", performedBy: user.email },
+      { timestamp: new Date().toISOString(), action: "Settled via Core Institutional Gateway", performedBy: "SYSTEM_CORE" },
+    ],
+  };
+
+  user.transactions.unshift(newTx);
+
+  // If save beneficiary
+  if (params.saveBeneficiary) {
+    if (!user.beneficiaries) user.beneficiaries = [];
+    const exists = user.beneficiaries.some((b) => b.accountNumber === params.recipientAccount);
+    if (!exists) {
+      user.beneficiaries.push({
+        id: "ben_" + Date.now(),
+        name: params.recipientName,
+        accountNumber: params.recipientAccount,
+        bankName: params.recipientBank,
+        routingNumber: params.routingNumber,
+        swiftBic: params.swiftBic,
+        country: params.recipientCountry || "United States",
+        currency: params.currency,
+        transferType: params.transferCategory,
+        createdAt: new Date().toISOString().slice(0, 10),
+      });
+    }
+  }
+
+  saveBankUsers(users);
+
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) {
+    setCurrentSession(user);
+  }
+
+  return { success: true, transaction: newTx };
+}
+
+/**
+ * Admin action to update transaction status (approve, decline, reverse)
+ */
+export function adminUpdateTransactionStatus(
+  userId: string,
+  txId: string,
+  status: BankTransaction["status"],
+  adminEmail: string,
+  reason?: string
+): boolean {
   const users = getBankUsers();
   const user = users.find((u) => u.id === userId);
-  if (user) {
-    const fullTx: BankTransaction = {
-      ...tx,
-      id: "tx_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
-    };
-    user.transactions.unshift(fullTx);
-    user.balance += tx.amount;
-    saveBankUsers(users);
-    const curr = getCurrentSession();
-    if (curr && curr.id === userId) setCurrentSession(user);
+  if (!user) return false;
+
+  const tx = user.transactions.find((t) => t.id === txId);
+  if (!tx) return false;
+
+  // Handle reversal refund
+  if (status === "reversed" && tx.status !== "reversed") {
+    user.balance += Math.abs(tx.totalDeduction || tx.amount);
   }
+
+  tx.status = status;
+  if (!tx.auditTrail) tx.auditTrail = [];
+  tx.auditTrail.push({
+    timestamp: new Date().toISOString(),
+    action: `Transaction status changed to ${status.toUpperCase()}${reason ? ` (${reason})` : ""}`,
+    performedBy: adminEmail,
+  });
+
+  saveBankUsers(users);
+
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) {
+    setCurrentSession(user);
+  }
+  return true;
+}
+
+export function saveUserBeneficiary(userId: string, ben: Omit<Beneficiary, "id" | "createdAt">): Beneficiary | null {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (!user) return null;
+
+  if (!user.beneficiaries) user.beneficiaries = [];
+  const newBen: Beneficiary = {
+    ...ben,
+    id: "ben_" + Date.now(),
+    createdAt: new Date().toISOString().slice(0, 10),
+  };
+  user.beneficiaries.unshift(newBen);
+  saveBankUsers(users);
+
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) setCurrentSession(user);
+  return newBen;
+}
+
+export function deleteUserBeneficiary(userId: string, benId: string): boolean {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (!user || !user.beneficiaries) return false;
+
+  user.beneficiaries = user.beneficiaries.filter((b) => b.id !== benId);
+  saveBankUsers(users);
+
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) setCurrentSession(user);
+  return true;
 }
 
 export function deleteBankUser(userId: string): void {
