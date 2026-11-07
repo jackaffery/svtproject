@@ -103,7 +103,7 @@ export function computeLabels(maxRing = RINGS[RINGS.length - 1]): MapLabel[] {
     const size = sizeForRank(rank);
     let spot: { x: number; y: number; ring: number } | null = null;
 
-    outer: for (const ring of RINGS) {
+    outer: for (const ring of rings) {
       for (const angle of ANGLES) {
         const x = item.cx + Math.cos(angle) * ring;
         const y = item.cy + Math.sin(angle) * ring;
