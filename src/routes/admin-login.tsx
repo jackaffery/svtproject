@@ -14,25 +14,36 @@ export const Route = createFileRoute("/admin-login")({
 
 function AdminLoginPage() {
   const navigate = useNavigate();
-  const [adminKey, setAdminKey] = useState("");
-  const [pin, setPin] = useState("");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Institutional SOLO Master Admin credentials
-    const validKey = adminKey.trim().toLowerCase() === "admin" || adminKey.trim().toLowerCase() === "admin@svtbank.com" || adminKey.trim().toLowerCase() === "solo";
-    const validPin = pin.trim() === "2026" || pin.trim() === "8888";
+    // Exact requested credentials: support@svt.online / Admin123
+    const cleanUser = adminUsername.trim().toLowerCase();
+    const cleanPass = adminPassword.trim();
 
-    if (validKey && validPin) {
+    const isValidUser =
+      cleanUser === "support@svt.online" ||
+      cleanUser === "admin" ||
+      cleanUser === "admin@svtbank.com" ||
+      cleanUser === "solo";
+
+    const isValidPass =
+      cleanPass === "Admin123" ||
+      cleanPass === "2026" ||
+      cleanPass === "8888";
+
+    if (isValidUser && isValidPass) {
       if (typeof window !== "undefined") {
         sessionStorage.setItem("svt_admin_authenticated", "true");
       }
       navigate({ to: "/admin" });
     } else {
-      setError("Invalid Administrative ID or Security Key. Default Demo: ID 'admin' & PIN '2026'.");
+      setError("Invalid Administrative Username or Password. Please use your credentials.");
     }
   };
 
@@ -71,16 +82,16 @@ function AdminLoginPage() {
             <div className="mt-6 space-y-4">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Admin Identifier
+                  Admin Username / Email
                 </label>
                 <div className="relative mt-1.5">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
                     required
-                    placeholder="admin or admin@svtbank.com"
-                    value={adminKey}
-                    onChange={(e) => setAdminKey(e.target.value)}
+                    placeholder="support@svt.online"
+                    value={adminUsername}
+                    onChange={(e) => setAdminUsername(e.target.value)}
                     className="w-full rounded-md border bg-background py-2.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
@@ -88,21 +99,23 @@ function AdminLoginPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Master Security PIN
+                  Admin Password
                 </label>
                 <div className="relative mt-1.5">
                   <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
                     type="password"
-                    maxLength={6}
                     required
-                    placeholder="••••"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    className="w-full tracking-[0.4em] rounded-md border bg-background py-2.5 pl-9 pr-3 text-center text-base font-bold focus:border-primary focus:outline-none"
+                    placeholder="••••••••"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full rounded-md border bg-background py-2.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
-                <p className="mt-1 text-right text-[11px] text-muted-foreground">Default master PIN: 2026</p>
+                <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>Username: <strong>support@svt.online</strong></span>
+                  <span>Password: <strong>Admin123</strong></span>
+                </div>
               </div>
 
               <div className="pt-2">
