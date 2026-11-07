@@ -5,7 +5,7 @@ import advisorAsset from "@/assets/client-advisor.png.asset.json";
 import { FloatingCta, meta, Section } from "@/components/site";
 import { WorldMap } from "@/components/world-map";
 import { services } from "@/lib/services";
-import { mapLabels, mapMarkers } from "@/lib/world-map-data";
+import { countryNames, mapLabels, mapMarkers } from "@/lib/world-map-data";
 
 const tradePartners = [
   "Canada",
