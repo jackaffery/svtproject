@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Lock, Eye, Users } from "lucide-react";
 import heroAsset from "@/assets/hero-meeting.png.asset.json";
-import advisorAsset from "@/assets/client-advisor.png.asset.json";
+import pamelaAsset from "@/assets/client-advisor.png.asset.json";
 import { FloatingCta, meta, Section } from "@/components/site";
 import { WorldMap } from "@/components/world-map";
 import { services } from "@/lib/services";
@@ -88,8 +88,8 @@ function Index() {
           <div className="relative">
             <div className="absolute -inset-3 -z-10 rounded-xl border border-gold/40" />
             <img
-              src={advisorAsset.url}
-              alt="Pamela Del Rey, Senior Client Advisor, seated at her desk"
+              src={pamelaAsset.url}
+              alt="Pamela Del Rey, a major shareholder in Stronghold Vault Trust, seated at her desk"
               width={1254}
               height={925}
               loading="lazy"
@@ -97,17 +97,20 @@ function Index() {
             />
           </div>
           <div>
-            <p className="eyebrow">Meet your advisor</p>
-            <h2 className="mt-3 text-3xl font-semibold md:text-4xl">A real person behind your account</h2>
+            <p className="eyebrow">Our shareholders</p>
+            <h2 className="mt-3 text-3xl font-semibold md:text-4xl">Invested in the long term</h2>
             <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-              Pamela Del Rey leads client advisory at Stronghold Vault Trust. She works directly with customers on savings, checking and business accounts — from the first application through to day-to-day account management.
+              Pamela Del Rey is a major shareholder in Stronghold Vault Trust and one of the people helping to lead it. Her stake rises and falls with the institution itself, so the decisions that shape this bank are made with the long term in mind, not the next quarter.
             </p>
             <blockquote className="mt-6 border-l-2 border-gold pl-5 text-lg italic text-foreground">
-              "Clients do not want a queue. They want someone who knows their name and their numbers."
+              "We are building this institution to outlast us. That is the only reason worth having a stake in it."
             </blockquote>
+            <p className="mt-5 max-w-xl text-sm text-muted-foreground">
+              She is not a personal advisor and does not manage individual accounts. For day-to-day help with a savings or checking account, our customer service team is the place to start.
+            </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/contact" className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground hover:bg-primary-deep">
-                Talk to Pamela <ArrowRight className="h-4 w-4" />
+                Contact our team <ArrowRight className="h-4 w-4" />
               </Link>
               <Link to="/open-account" className="rounded-md border px-6 py-3 font-semibold hover:border-primary hover:text-primary">Open an Account</Link>
             </div>
