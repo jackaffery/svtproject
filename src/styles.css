@@ -29,6 +29,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-silver: var(--silver);
   --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -56,6 +57,7 @@
   --accent-foreground: oklch(0.3 0.075 258);
   --silver: oklch(0.83 0 0); /* #C5C5C5 */
   --gold: oklch(0.78 0.105 85); /* soft gold */
+  --gold-deep: oklch(0.69 0.108 80); /* pressed gold */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.9 0.005 250);
@@ -89,4 +91,8 @@
 @utility globe-fade {
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 80%);
   mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 80%);
+}
+
+@utility cta-glow {
+  box-shadow: 0 14px 34px -12px color-mix(in oklab, var(--gold) 70%, transparent);
 }

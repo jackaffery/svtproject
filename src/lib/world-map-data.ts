@@ -33,6 +33,15 @@ const path = geoPath(projection);
 export const spherePath = path({ type: "Sphere" } as GeoPermissibleObjects) ?? "";
 export const graticulePath = path(geoGraticule10() as GeoPermissibleObjects) ?? "";
 
+export type CountryShape = { name: string; d: string };
+
+export const countryShapes: CountryShape[] = countries
+  .map((c) => ({
+    name: c.properties.name,
+    d: path(c as unknown as GeoPermissibleObjects) ?? "",
+  }))
+  .filter((c) => c.d.length > 0);
+
 export type MapLabel = {
   name: string;
   x: number;
