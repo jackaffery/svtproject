@@ -5,22 +5,9 @@ import advisorAsset from "@/assets/client-advisor.png.asset.json";
 import { FloatingCta, meta, Section } from "@/components/site";
 import { WorldMap } from "@/components/world-map";
 import { services } from "@/lib/services";
-import { countryNames, mapLabels, mapMarkers } from "@/lib/world-map-data";
+import { countryNames, mapLabels, mapMarkers, TRADE_PARTNERS } from "@/lib/world-map-data";
 
-const tradePartners = [
-  "Canada",
-  "Mexico",
-  "China",
-  "Japan",
-  "United Kingdom",
-  "Germany",
-  "South Korea",
-  "India",
-  "France",
-  "Italy",
-  "Brazil",
-  "Netherlands",
-];
+const tradePartners = TRADE_PARTNERS;
 
 export const Route = createFileRoute("/")({
   head: () => meta("Stronghold Vault Trust Institution — Financial Confidence", "Modern financial services built around accessibility, transparency and customer convenience."),
