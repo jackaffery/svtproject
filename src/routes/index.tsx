@@ -1,8 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Lock, Eye, Users } from "lucide-react";
 import heroAsset from "@/assets/hero-meeting.png.asset.json";
+import advisorAsset from "@/assets/client-advisor.png.asset.json";
+import globeAsset from "@/assets/earth-trade-globe.jpg";
 import { meta, Section } from "@/components/site";
 import { services } from "@/lib/services";
+
+const tradePartners = [
+  "Canada",
+  "Mexico",
+  "China",
+  "Japan",
+  "United Kingdom",
+  "Germany",
+  "South Korea",
+  "India",
+  "France",
+  "Italy",
+  "Brazil",
+  "Netherlands",
+];
 
 export const Route = createFileRoute("/")({
   head: () => meta("Stronghold Vault Trust Institution — Financial Confidence", "Modern financial services built around accessibility, transparency and customer convenience."),
@@ -68,6 +85,38 @@ function Index() {
         </div>
       </Section>
 
+      <Section>
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-14">
+          <div className="relative">
+            <div className="absolute -inset-3 -z-10 rounded-xl border border-gold/40" />
+            <img
+              src={advisorAsset.url}
+              alt="Pamela Del Rey, Senior Client Advisor, seated at her desk"
+              width={1254}
+              height={925}
+              loading="lazy"
+              className="w-full rounded-lg border bg-card object-cover shadow-xl"
+            />
+          </div>
+          <div>
+            <p className="eyebrow">Meet your advisor</p>
+            <h2 className="mt-3 text-3xl font-semibold md:text-4xl">A real person behind your account</h2>
+            <p className="mt-5 max-w-xl text-lg text-muted-foreground">
+              Pamela Del Rey leads client advisory at Stronghold Vault Trust. She works directly with customers on savings, checking and business accounts — from the first application through to day-to-day account management.
+            </p>
+            <blockquote className="mt-6 border-l-2 border-gold pl-5 text-lg italic text-foreground">
+              "Clients do not want a queue. They want someone who knows their name and their numbers."
+            </blockquote>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/contact" className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground hover:bg-primary-deep">
+                Talk to Pamela <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link to="/open-account" className="rounded-md border px-6 py-3 font-semibold hover:border-primary hover:text-primary">Open an Account</Link>
+            </div>
+          </div>
+        </div>
+      </Section>
+
       <section className="bg-primary text-primary-foreground">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-5 py-14 md:flex-row md:items-center">
           <div>
@@ -75,6 +124,40 @@ function Index() {
             <p className="mt-2 text-primary-foreground/80">Apply online in minutes. Every application is reviewed by our team.</p>
           </div>
           <Link to="/open-account" className="rounded-md bg-primary-foreground px-6 py-3 font-semibold text-primary hover:bg-secondary">Open an Account</Link>
+        </div>
+      </section>
+
+      <section className="bg-primary-deep text-primary-foreground">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 md:py-20 lg:grid-cols-2">
+          <div className="relative flex justify-center">
+            <div className="absolute inset-0 -z-10 mx-auto aspect-square max-w-md rounded-full bg-gold/10 blur-3xl" />
+            <img
+              src={globeAsset}
+              alt="Globe showing gold trade routes linking the Americas with Europe, Africa and Asia"
+              width={1024}
+              height={1024}
+              loading="lazy"
+              className="globe-fade w-full max-w-md"
+            />
+          </div>
+          <div>
+            <p className="eyebrow">Global reach</p>
+            <h2 className="mt-3 text-3xl font-semibold md:text-4xl">12 countries we trade with</h2>
+            <p className="mt-5 max-w-xl text-primary-foreground/80">
+              Our customers move value across the world's busiest trade corridors. These are the twelve largest trading partners of the United States.
+            </p>
+            <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {tradePartners.map((c) => (
+                <li key={c} className="flex items-center gap-2 rounded-md border border-primary-foreground/15 bg-primary-foreground/5 px-3 py-2 text-sm font-medium">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                  {c}
+                </li>
+              ))}
+            </ul>
+            <Link to="/contact" className="mt-8 inline-flex items-center gap-2 font-semibold text-gold hover:underline">
+              Ask about international payments <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </section>
     </>
