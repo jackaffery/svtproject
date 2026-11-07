@@ -27,9 +27,16 @@ const tradePartners = [
 ];
 
 describe("World map country names", () => {
-  it("prints a name for every country in the dataset", () => {
-    expect(mapLabels).toHaveLength(countries.length);
-    expect(mapLabels).toHaveLength(177);
+  it("gives every country a place on the map, named or numbered", () => {
+    const named = new Set(mapLabels.map((l) => l.name));
+    const numbered = new Set(mapMarkers.map((m) => m.name));
+    expect(named.size + numbered.size).toBe(countries.length);
+    for (const c of countries) {
+      expect(named.has(c.properties.name) || numbered.has(c.properties.name)).toBe(true);
+    }
+    expect(mapMarkers.map((m) => m.n)).toEqual(
+      Array.from({ length: mapMarkers.length }, (_, i) => i + 1),
+    );
   });
 
   it("names each of the twelve trading partners on the map", () => {

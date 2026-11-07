@@ -150,7 +150,7 @@ function Index() {
               <p className="eyebrow">Global reach</p>
               <h2 className="mt-3 text-3xl font-semibold md:text-4xl">Every country, named on the map</h2>
               <p className="mt-5 max-w-2xl text-primary-foreground/80">
-                All {countryNames.length} countries are labelled on the earth map below. The {tradePartners.length} largest trading partners of the United States are marked in gold.
+                All {countryNames.length} countries appear on the earth map below: {mapLabels.length} named in place, and the {mapMarkers.length} too small to hold a name marked with a number and listed under the map. The {tradePartners.length} largest trading partners of the United States are in gold.
               </p>
             </div>
             <Link to="/contact" className="inline-flex items-center gap-2 font-semibold text-gold hover:underline">
