@@ -77,9 +77,10 @@ const RINGS = [0, 9, 17, 26, 36, 48, 62, 78, 96, 116, 138, 162, 188, 216, 246];
  * keep their own space; every other country searches outwards from its centre
  * until it finds a gap that no name already on the map occupies.
  */
-export function computeLabels(): MapLabel[] {
+export function computeLabels(maxRing = RINGS[RINGS.length - 1]): MapLabel[] {
   const placed: Box[] = [];
   const labels: MapLabel[] = [];
+  const rings = RINGS.filter((r) => r <= maxRing);
 
   const items = countries
     .map((f) => {
