@@ -3,6 +3,21 @@ import type { GeoPermissibleObjects } from "d3-geo";
 import { feature } from "topojson-client";
 import countriesTopo from "world-atlas/countries-110m.json";
 
+export const TRADE_PARTNERS = [
+  "Canada",
+  "Mexico",
+  "China",
+  "Japan",
+  "United Kingdom",
+  "Germany",
+  "South Korea",
+  "India",
+  "France",
+  "Italy",
+  "Brazil",
+  "Netherlands",
+] as const;
+
 export const MAP_W = 1200;
 export const MAP_H = 560;
 
@@ -70,7 +85,7 @@ export type Box = { x0: number; y0: number; x1: number; y1: number };
  * touch never collide on screen either.
  */
 export function labelBox(l: { name: string; x: number; y: number; size: number }): Box {
-  const w = l.name.length * l.size * 0.64 + 6;
+  const w = l.name.length * l.size * 0.7 + 6;
   const h = l.size + 4;
   return { x0: l.x - w / 2, y0: l.y - h / 2, x1: l.x + w / 2, y1: l.y + h / 2 };
 }
@@ -117,7 +132,14 @@ export function computeLayout(): { labels: MapLabel[]; markers: MapMarker[] } {
       };
     })
     .filter((i) => Number.isFinite(i.cx) && Number.isFinite(i.cy))
-    .sort((a, b) => b.area - a.area);
+    // The named trading partners get first pick of space; everyone else follows,
+    // biggest landmasses first.
+    .sort((a, b) => {
+      const pa = TRADE_PARTNERS.includes(a.name as (typeof TRADE_PARTNERS)[number]) ? 0 : 1;
+      const pb = TRADE_PARTNERS.includes(b.name as (typeof TRADE_PARTNERS)[number]) ? 0 : 1;
+      if (pa !== pb) return pa - pb;
+      return b.area - a.area;
+    });
 
   items.forEach((item, rank) => {
     const size = sizeForRank(rank);
@@ -164,9 +186,9 @@ export function computeLayout(): { labels: MapLabel[]; markers: MapMarker[] } {
           const px = c.cx + Math.cos(angle) * ring;
           const py = c.cy + Math.sin(angle) * ring;
           const box: Box = {
-            x0: px - (digits * size * 0.64) / 2 - 3,
+            x0: px - (digits * size * 0.7) / 2 - 4,
             y0: py - (size + 3) / 2,
-            x1: px + (digits * size * 0.64) / 2 + 3,
+            x1: px + (digits * size * 0.7) / 2 + 4,
             y1: py + (size + 3) / 2,
           };
           if (!fits(box, placed)) return false;
