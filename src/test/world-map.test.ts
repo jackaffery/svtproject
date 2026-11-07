@@ -34,9 +34,6 @@ describe("World map country names", () => {
     for (const c of countries) {
       expect(named.has(c.properties.name) || numbered.has(c.properties.name)).toBe(true);
     }
-    expect(mapMarkers.map((m) => m.n)).toEqual(
-      Array.from({ length: mapMarkers.length }, (_, i) => i + 1),
-    );
   });
 
   it("names each of the twelve trading partners on the map", () => {

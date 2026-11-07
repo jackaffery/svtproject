@@ -74,30 +74,10 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
             ))}
           </g>
 
-          {/* Countries too small to hold a name carry a number instead. */}
+          {/* Countries too small to hold a name carry a gold dot instead. */}
           {mapMarkers.map((m) => (
             <g key={m.name}>
-              {Math.hypot(m.x - m.cx, m.y - m.cy) > 3 && (
-                <line
-                  x1={m.cx}
-                  y1={m.cy}
-                  x2={m.x}
-                  y2={m.y}
-                  className="stroke-gold/60"
-                  strokeWidth={0.5}
-                />
-              )}
-              <circle cx={m.cx} cy={m.cy} r={1.9} className="fill-gold" />
-              <text
-                x={m.x}
-                y={m.y}
-                fontSize={m.size}
-                textAnchor="middle"
-                dominantBaseline="central"
-                className="pointer-events-none fill-gold font-bold"
-              >
-                {m.n}
-              </text>
+              <circle cx={m.cx} cy={m.cy} r={2.2} className="fill-gold" />
               <circle
                 cx={m.cx}
                 cy={m.cy}
@@ -126,16 +106,16 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
       {mapMarkers.length > 0 && (
         <div className="mt-4 rounded-xl border border-primary-foreground/12 bg-primary-foreground/[0.04] p-5">
           <p className="text-[0.68rem] font-bold tracking-[0.2em] uppercase text-gold">
-            Numbered on the map
+            Marked with a gold dot
           </p>
           <p className="mt-2 text-xs text-primary-foreground/60">
-            These countries are too small to hold their own name at this size. Each number sits on
-            the country it names.
+            These countries are too small to hold their own name at this size. Each one sits on the
+            map as a gold dot — point at a dot to read its name.
           </p>
           <ol className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1.5 text-[0.8rem] sm:grid-cols-3 lg:grid-cols-4">
             {mapMarkers.map((m) => (
-              <li key={m.name} className="flex items-baseline gap-2">
-                <span className="w-5 shrink-0 text-right font-bold text-gold">{m.n}</span>
+              <li key={m.name} className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
                 <span className="text-primary-foreground/85">{m.name}</span>
               </li>
             ))}
