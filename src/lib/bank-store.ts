@@ -438,6 +438,47 @@ export function executeMoneyTransfer(params: {
 }
 
 /**
+ * Append a transaction to a user's ledger and apply it to the checking balance.
+ * Unspecified fields are filled with sensible defaults.
+ */
+export function addTransaction(
+  userId: string,
+  tx: Partial<BankTransaction> &
+    Pick<BankTransaction, "type" | "description" | "amount" | "date" | "status" | "reference">
+): BankTransaction | null {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (!user) return null;
+
+  const newTx: BankTransaction = {
+    id: "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+    fee: 0,
+    totalDeduction: 0,
+    currency: "USD",
+    senderName: user.fullName,
+    senderAccount: user.accountNumber,
+    recipientName: "",
+    recipientAccount: "",
+    recipientBank: "",
+    ...tx,
+  };
+  if (newTx.amount < 0 && newTx.totalDeduction === 0) {
+    newTx.totalDeduction = Math.abs(newTx.amount) + newTx.fee;
+  }
+
+  user.balance += newTx.amount;
+  user.balance -= newTx.fee;
+  user.transactions.unshift(newTx);
+  saveBankUsers(users);
+
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) {
+    setCurrentSession(user);
+  }
+  return newTx;
+}
+
+/**
  * Admin action to update transaction status (approve, decline, reverse)
  */
 export function adminUpdateTransactionStatus(
