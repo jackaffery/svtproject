@@ -15,9 +15,11 @@ import { Route as AccessibilityRouteImport } from './routes/accessibility'
 import { Route as AccountProfileRouteImport } from './routes/account-profile'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
+import { Route as CardsRouteImport } from './routes/cards'
 import { Route as CheckingRouteImport } from './routes/checking'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DigitalAssetsRouteImport } from './routes/digital-assets'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OpenAccountRouteImport } from './routes/open-account'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -59,6 +61,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin-login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CardsRoute = CardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckingRoute = CheckingRouteImport.update({
   id: '/checking',
   path: '/checking',
@@ -72,6 +79,11 @@ const ContactRoute = ContactRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DigitalAssetsRoute = DigitalAssetsRouteImport.update({
+  id: '/digital-assets',
+  path: '/digital-assets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -132,9 +144,11 @@ export interface FileRoutesByFullPath {
   '/account-profile': typeof AccountProfileRoute
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
+  '/cards': typeof CardsRoute
   '/checking': typeof CheckingRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
+  '/digital-assets': typeof DigitalAssetsRoute
   '/login': typeof LoginRoute
   '/open-account': typeof OpenAccountRoute
   '/privacy': typeof PrivacyRoute
@@ -153,9 +167,11 @@ export interface FileRoutesByTo {
   '/account-profile': typeof AccountProfileRoute
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
+  '/cards': typeof CardsRoute
   '/checking': typeof CheckingRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
+  '/digital-assets': typeof DigitalAssetsRoute
   '/login': typeof LoginRoute
   '/open-account': typeof OpenAccountRoute
   '/privacy': typeof PrivacyRoute
@@ -175,9 +191,11 @@ export interface FileRoutesById {
   '/account-profile': typeof AccountProfileRoute
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
+  '/cards': typeof CardsRoute
   '/checking': typeof CheckingRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
+  '/digital-assets': typeof DigitalAssetsRoute
   '/login': typeof LoginRoute
   '/open-account': typeof OpenAccountRoute
   '/privacy': typeof PrivacyRoute
@@ -198,9 +216,11 @@ export interface FileRouteTypes {
     | '/account-profile'
     | '/admin'
     | '/admin-login'
+    | '/cards'
     | '/checking'
     | '/contact'
     | '/dashboard'
+    | '/digital-assets'
     | '/login'
     | '/open-account'
     | '/privacy'
@@ -219,9 +239,11 @@ export interface FileRouteTypes {
     | '/account-profile'
     | '/admin'
     | '/admin-login'
+    | '/cards'
     | '/checking'
     | '/contact'
     | '/dashboard'
+    | '/digital-assets'
     | '/login'
     | '/open-account'
     | '/privacy'
@@ -240,9 +262,11 @@ export interface FileRouteTypes {
     | '/account-profile'
     | '/admin'
     | '/admin-login'
+    | '/cards'
     | '/checking'
     | '/contact'
     | '/dashboard'
+    | '/digital-assets'
     | '/login'
     | '/open-account'
     | '/privacy'
@@ -262,9 +286,11 @@ export interface RootRouteChildren {
   AccountProfileRoute: typeof AccountProfileRoute
   AdminRoute: typeof AdminRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  CardsRoute: typeof CardsRoute
   CheckingRoute: typeof CheckingRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
+  DigitalAssetsRoute: typeof DigitalAssetsRoute
   LoginRoute: typeof LoginRoute
   OpenAccountRoute: typeof OpenAccountRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -321,6 +347,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cards': {
+      id: '/cards'
+      path: '/cards'
+      fullPath: '/cards'
+      preLoaderRoute: typeof CardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/checking': {
       id: '/checking'
       path: '/checking'
@@ -340,6 +373,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/digital-assets': {
+      id: '/digital-assets'
+      path: '/digital-assets'
+      fullPath: '/digital-assets'
+      preLoaderRoute: typeof DigitalAssetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -422,9 +462,11 @@ const rootRouteChildren: RootRouteChildren = {
   AccountProfileRoute: AccountProfileRoute,
   AdminRoute: AdminRoute,
   AdminLoginRoute: AdminLoginRoute,
+  CardsRoute: CardsRoute,
   CheckingRoute: CheckingRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
+  DigitalAssetsRoute: DigitalAssetsRoute,
   LoginRoute: LoginRoute,
   OpenAccountRoute: OpenAccountRoute,
   PrivacyRoute: PrivacyRoute,

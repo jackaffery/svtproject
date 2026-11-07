@@ -124,6 +124,8 @@ function RootComponent() {
     currentPath.startsWith("/dashboard") ||
     currentPath.startsWith("/account-profile") ||
     currentPath.startsWith("/transfer") ||
+    currentPath.startsWith("/cards") ||
+    currentPath.startsWith("/digital-assets") ||
     currentPath.startsWith("/admin");
 
   return (

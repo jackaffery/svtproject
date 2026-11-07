@@ -300,7 +300,7 @@ function CustomerDashboardPage() {
           </Link>
 
           <Link
-            to="/account-profile"
+            to="/cards"
             className="group flex items-start gap-4 rounded-2xl border border-primary-foreground/15 bg-[#0e2240] p-6 text-left transition-all hover:bg-[#122b52] hover:shadow-lg"
           >
             <div className="grid h-12 w-12 place-items-center rounded-xl bg-gold text-[#081528] shadow-md transition-transform group-hover:scale-105">
@@ -313,7 +313,7 @@ function CustomerDashboardPage() {
           </Link>
 
           <Link
-            to="/account-profile"
+            to="/digital-assets"
             className="group flex items-start gap-4 rounded-2xl border border-primary-foreground/15 bg-[#0e2240] p-6 text-left transition-all hover:bg-[#122b52] hover:shadow-lg"
           >
             <div className="grid h-12 w-12 place-items-center rounded-xl bg-gold text-[#081528] shadow-md transition-transform group-hover:scale-105">

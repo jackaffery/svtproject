@@ -34,7 +34,9 @@ import {
   deleteBankUser,
   setCurrentSession,
   registerNewUser,
+  adminUpdateIrsRefundStatus,
   type BankUser,
+  type IrsRefundRecord,
 } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/admin")({
@@ -63,6 +65,7 @@ function MasterSoloAdminPage() {
 
   // Create User Modal
   const [createUserModal, setCreateUserModal] = useState(false);
+  const [showIrsModal, setShowIrsModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
@@ -275,11 +278,11 @@ function MasterSoloAdminPage() {
           </button>
 
           <button
-            onClick={() => showToast("IRS Tax Refund module active.")}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100"
+            onClick={() => setShowIrsModal(true)}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100 text-[#0a1b33] font-bold"
           >
-            <FileText className="h-4 w-4" />
-            <span>IRS Refunds</span>
+            <FileText className="h-4 w-4 text-emerald-600" />
+            <span>IRS Refunds Spot</span>
           </button>
 
           <button
@@ -755,6 +758,109 @@ function MasterSoloAdminPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* IRS Refunds Spot Management Modal */}
+      {showIrsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-emerald-600" />
+                <div>
+                  <h3 className="text-base font-bold text-[#0a1b33]">IRS Federal Tax Refund Treasury Spot</h3>
+                  <p className="text-[11px] text-gray-500">Verify Treasury trace numbers, approve direct deposits, and audit federal returns</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowIrsModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {users.map((u) => (
+                <div key={u.id} className="rounded-xl border border-gray-200 p-4 bg-gray-50/50">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <div>
+                      <span className="font-bold text-sm text-[#0a1b33] capitalize">{u.fullName}</span>
+                      <span className="ml-2 font-mono text-[11px] text-gray-500">Acct #{u.accountNumber}</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-700">Checking Balance: ${u.balance.toLocaleString()}</span>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {(u.irsRefunds || []).map((refund) => (
+                      <div
+                        key={refund.id}
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border border-gray-200 bg-white p-3 gap-2"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-[#0a1b33]">{refund.taxYear}</span>
+                            <span
+                              className={`rounded px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                                refund.depositStatus === "deposited"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : refund.depositStatus === "approved"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {refund.depositStatus.replace("_", " ")}
+                            </span>
+                          </div>
+                          <p className="font-mono text-[11px] text-gray-500 mt-0.5">Trace #{refund.treasuryTraceNumber}</p>
+                          {refund.notes && <p className="text-[11px] text-gray-600 mt-0.5">{refund.notes}</p>}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-base font-bold text-emerald-600">
+                            +${refund.refundAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </span>
+
+                          {refund.depositStatus !== "deposited" && (
+                            <button
+                              onClick={() => {
+                                adminUpdateIrsRefundStatus(
+                                  u.id,
+                                  refund.id,
+                                  "deposited",
+                                  "Treasury automated electronic deposit confirmed by Solo Administrator."
+                                );
+                                loadData();
+                                showToast(`Approved & credited IRS refund of $${refund.refundAmount.toLocaleString()} to ${u.fullName}`);
+                              }}
+                              className="rounded bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-700 text-xs shadow-xs"
+                            >
+                              Approve & Deposit
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {(!u.irsRefunds || u.irsRefunds.length === 0) && (
+                      <p className="text-[11px] text-gray-400">No IRS refund filings registered for this client.</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => setShowIrsModal(false)}
+                className="rounded-lg border px-4 py-2 font-bold text-gray-600 hover:bg-gray-100"
+              >
+                Close IRS Spot
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

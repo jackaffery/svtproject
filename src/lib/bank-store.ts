@@ -37,6 +37,45 @@ export interface BankTransaction {
   auditTrail?: { timestamp: string; action: string; performedBy: string }[];
 }
 
+export interface BankCard {
+  id: string;
+  type: "debit" | "credit";
+  cardholderName: string;
+  cardNumber: string; // e.g. "4532 •••• •••• 8841"
+  expiryDate: string;
+  cvv: string;
+  pin: string;
+  status: "active" | "frozen" | "blocked";
+  dailySpendingLimit: number;
+  dailyAtmLimit: number;
+  currentDailySpend: number;
+  billingAddress: string;
+  issuedDate: string;
+}
+
+export interface DigitalAssetHolding {
+  symbol: "BTC" | "ETH";
+  name: string;
+  balance: number;
+  fiatValueUsd: number;
+  custodyVaultAddress: string;
+  status: "active" | "pending_network_sync" | "maintenance";
+  lastAuditTimestamp: string;
+}
+
+export interface IrsRefundRecord {
+  id: string;
+  ssnLast4: string;
+  taxYear: string;
+  refundAmount: number;
+  filingStatus: "Single" | "Married Filing Jointly" | "Head of Household";
+  depositStatus: "pending_review" | "approved" | "deposited" | "rejected";
+  treasuryTraceNumber: string;
+  submissionDate: string;
+  depositDate?: string;
+  notes?: string;
+}
+
 export interface BankUser {
   id: string;
   fullName: string;
@@ -67,6 +106,9 @@ export interface BankUser {
   monthlyDepositLimit: number;
   transactions: BankTransaction[];
   beneficiaries: Beneficiary[];
+  cards: BankCard[];
+  digitalAssets: DigitalAssetHolding[];
+  irsRefunds: IrsRefundRecord[];
   btcBalance?: number;
   loginActivity?: { timestamp: string; ip: string; device: string; location: string }[];
 }
@@ -127,6 +169,83 @@ const INITIAL_DEMO_USER: BankUser = {
   monthlyDepositLimit: 10000000,
   btcBalance: 0.00,
   beneficiaries: INITIAL_BENEFICIARIES,
+  cards: [
+    {
+      id: "crd_01",
+      type: "debit",
+      cardholderName: "JACK RAY AFFERY",
+      cardNumber: "4532 •••• •••• 8841",
+      expiryDate: "09/29",
+      cvv: "392",
+      pin: "2026",
+      status: "active",
+      dailySpendingLimit: 15000,
+      dailyAtmLimit: 5000,
+      currentDailySpend: 0,
+      billingAddress: "1600 Pennsylvania Ave NW, Washington, D.C.",
+      issuedDate: "2026-11-01",
+    },
+    {
+      id: "crd_02",
+      type: "credit",
+      cardholderName: "JACK RAY AFFERY",
+      cardNumber: "5421 •••• •••• 4209",
+      expiryDate: "11/30",
+      cvv: "812",
+      pin: "2026",
+      status: "active",
+      dailySpendingLimit: 50000,
+      dailyAtmLimit: 10000,
+      currentDailySpend: 1250,
+      billingAddress: "1600 Pennsylvania Ave NW, Washington, D.C.",
+      issuedDate: "2026-11-02",
+    },
+  ],
+  digitalAssets: [
+    {
+      symbol: "BTC",
+      name: "Bitcoin Vault Custody",
+      balance: 1.4852,
+      fiatValueUsd: 138420.50,
+      custodyVaultAddress: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+      status: "active",
+      lastAuditTimestamp: "2026-11-07 08:30:00 UTC",
+    },
+    {
+      symbol: "ETH",
+      name: "Ethereum Smart Reserve",
+      balance: 12.85,
+      fiatValueUsd: 41250.00,
+      custodyVaultAddress: "0x71C...B29F4a09",
+      status: "active",
+      lastAuditTimestamp: "2026-11-07 08:30:00 UTC",
+    },
+  ],
+  irsRefunds: [
+    {
+      id: "irs_2026_01",
+      ssnLast4: "4355",
+      taxYear: "2025/2026",
+      refundAmount: 8450.00,
+      filingStatus: "Single",
+      depositStatus: "deposited",
+      treasuryTraceNumber: "US-IRS-TREAS-89410294",
+      submissionDate: "2026-03-15",
+      depositDate: "2026-04-02",
+      notes: "Direct Treasury Deposit to Advantage Checking #45643224892",
+    },
+    {
+      id: "irs_2026_02",
+      ssnLast4: "4355",
+      taxYear: "2026 Mid-Year Adjustment",
+      refundAmount: 3200.00,
+      filingStatus: "Single",
+      depositStatus: "pending_review",
+      treasuryTraceNumber: "US-IRS-TREAS-99214482",
+      submissionDate: "2026-10-18",
+      notes: "IRS 1040-ES Treasury verification in progress by Solo Admin.",
+    },
+  ],
   loginActivity: [
     { timestamp: "2026-11-07 10:14 AM", ip: "192.168.1.42", device: "Chrome 130 / Windows 11", location: "Washington, D.C." },
     { timestamp: "2026-11-06 08:30 PM", ip: "192.168.1.42", device: "Chrome 130 / Windows 11", location: "Washington, D.C." },
@@ -503,6 +622,90 @@ export function deleteUserBeneficiary(userId: string, benId: string): boolean {
   user.beneficiaries = user.beneficiaries.filter((b) => b.id !== benId);
   saveBankUsers(users);
 
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) setCurrentSession(user);
+  return true;
+}
+
+export function updateUserCard(
+  userId: string,
+  cardId: string,
+  updates: Partial<BankCard>
+): BankCard | null {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (!user || !user.cards) return null;
+
+  const cardIdx = user.cards.findIndex((c) => c.id === cardId);
+  if (cardIdx === -1) return null;
+
+  user.cards[cardIdx] = { ...user.cards[cardIdx], ...updates };
+  saveBankUsers(users);
+
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) setCurrentSession(user);
+  return user.cards[cardIdx];
+}
+
+export function updateUserDigitalAssets(
+  userId: string,
+  symbol: "BTC" | "ETH",
+  updates: Partial<DigitalAssetHolding>
+): DigitalAssetHolding | null {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (!user || !user.digitalAssets) return null;
+
+  const assetIdx = user.digitalAssets.findIndex((a) => a.symbol === symbol);
+  if (assetIdx === -1) return null;
+
+  user.digitalAssets[assetIdx] = { ...user.digitalAssets[assetIdx], ...updates };
+  saveBankUsers(users);
+
+  const curr = getCurrentSession();
+  if (curr && curr.id === user.id) setCurrentSession(user);
+  return user.digitalAssets[assetIdx];
+}
+
+export function adminUpdateIrsRefundStatus(
+  userId: string,
+  refundId: string,
+  status: IrsRefundRecord["depositStatus"],
+  notes?: string
+): boolean {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (!user || !user.irsRefunds) return false;
+
+  const refund = user.irsRefunds.find((r) => r.id === refundId);
+  if (!refund) return false;
+
+  refund.depositStatus = status;
+  if (notes) refund.notes = notes;
+  if (status === "deposited" && !refund.depositDate) {
+    refund.depositDate = new Date().toISOString().slice(0, 10);
+    user.balance += refund.refundAmount; // Credit to checking
+    user.transactions.unshift({
+      id: "tx_irs_" + Date.now(),
+      type: "deposit",
+      transferCategory: "domestic",
+      description: `IRS Federal Tax Refund Treasury Settlement (${refund.taxYear})`,
+      amount: refund.refundAmount,
+      fee: 0,
+      totalDeduction: 0,
+      currency: "USD",
+      senderName: "United States Department of the Treasury",
+      senderAccount: "TREAS-IRS-DIR-DEP",
+      recipientName: user.fullName,
+      recipientAccount: user.accountNumber,
+      recipientBank: "Stronghold Vault Trust Institution",
+      date: new Date().toISOString().slice(0, 10),
+      status: "completed",
+      reference: refund.treasuryTraceNumber,
+    });
+  }
+
+  saveBankUsers(users);
   const curr = getCurrentSession();
   if (curr && curr.id === user.id) setCurrentSession(user);
   return true;
