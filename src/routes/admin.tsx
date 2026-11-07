@@ -311,7 +311,7 @@ function MasterSoloAdminPage() {
               US
             </span>
             <span className="font-display text-lg font-bold text-[#0a1b33]">
-              West Side Financial Institution (SVT)
+              Stronghold Vault Trust Institution
             </span>
           </div>
 
@@ -431,7 +431,7 @@ function MasterSoloAdminPage() {
                   {filteredUsers.map((u) => (
                     <tr key={u.id} className="hover:bg-gray-50/80 transition-colors">
                       <td className="py-4 px-6">
-                        <p className="font-bold text-[#0a1b33]">WSB-US-{u.accountNumber.slice(-6)}</p>
+                        <p className="font-bold text-[#0a1b33]">SVT-US-{u.accountNumber.slice(-6)}</p>
                         <p className="text-[11px] text-gray-400">Today, Just now</p>
                       </td>
 

@@ -81,7 +81,7 @@ function CustomerDashboardPage() {
       amount: -amt,
       date: new Date().toISOString().slice(0, 10),
       status: "completed",
-      reference: `WSB-WT-${Math.floor(100000 + Math.random() * 900000)}`,
+      reference: `SVT-WT-${Math.floor(100000 + Math.random() * 900000)}`,
     });
 
     const refreshed = getCurrentSession();

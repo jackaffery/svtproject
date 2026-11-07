@@ -46,7 +46,7 @@ const SESSION_KEY = "svt_current_session_v2";
 
 // Matching user's exact profile from uploaded screenshots: Jack ray Affery
 const INITIAL_DEMO_USER: BankUser = {
-  id: "usr_wsb_234662",
+  id: "usr_svt_234662",
   fullName: "jack ray affery",
   username: "jackaffery2024",
   email: "jackaffery2024@gmail.com",
@@ -84,7 +84,7 @@ const INITIAL_DEMO_USER: BankUser = {
       amount: 4564322.00,
       date: "2026-11-05",
       status: "completed",
-      reference: "WSB-US-234662",
+      reference: "SVT-US-234662",
     },
   ],
 };
