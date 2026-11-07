@@ -67,7 +67,14 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
                 fontSize={l.size}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className={isPartner(l.name) ? "fill-primary-deep font-bold" : "fill-primary-foreground/80"}
+                strokeWidth={2.2}
+                strokeLinejoin="round"
+                style={{ paintOrder: "stroke" }}
+                className={
+                  isPartner(l.name)
+                    ? "fill-gold stroke-primary-deep font-bold"
+                    : "fill-primary-foreground/90 stroke-primary-deep"
+                }
               >
                 {l.name}
               </text>
@@ -77,7 +84,7 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
           {/* Countries too small to hold a name carry a gold dot instead. */}
           {mapMarkers.map((m) => (
             <g key={m.name}>
-              <circle cx={m.cx} cy={m.cy} r={2.2} className="fill-gold" />
+              <circle cx={m.cx} cy={m.cy} r={2.2} className="fill-gold stroke-primary-deep" strokeWidth={0.7} />
               <circle
                 cx={m.cx}
                 cy={m.cy}

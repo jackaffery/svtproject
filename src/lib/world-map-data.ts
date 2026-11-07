@@ -97,7 +97,7 @@ const RINGS = [0, 9, 17, 26, 36, 48, 62, 78, 96, 116, 138, 162, 188, 216, 246];
 const ON_MAP_MAX_RING = 40;
 
 const sizeForRank = (rank: number) =>
-  rank < 10 ? 11 : rank < 32 ? 9.5 : rank < 70 ? 8 : rank < 120 ? 6.8 : 6;
+  rank < 10 ? 11 : rank < 32 ? 9.5 : rank < 70 ? 8 : rank < 120 ? 6.8 : 6.4;
 
 function fits(box: Box, placed: Box[]) {
   if (box.x0 < 3 || box.x1 > MAP_W - 3 || box.y0 < 3 || box.y1 > MAP_H - 3) return false;
