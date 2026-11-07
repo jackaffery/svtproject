@@ -14,6 +14,7 @@ import {
   Camera,
   Coins,
   CreditCard,
+  Upload,
 } from "lucide-react";
 import { meta } from "@/components/site";
 import { getCurrentSession, updateUserDetails, type BankUser } from "@/lib/bank-store";
@@ -69,6 +70,30 @@ function AccountProfilePage() {
   }, [navigate]);
 
   if (!user) return null;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setFeedback({ text: "Please upload an image file (PNG, JPG, or WEBP).", error: true });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setAvatarUrl(dataUrl);
+        const updated = updateUserDetails(user.id, { avatarUrl: dataUrl });
+        if (updated) {
+          setUser(updated);
+          setFeedback({ text: "Profile picture uploaded and saved successfully!" });
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleUpdateProfilePhoto = (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,39 +226,75 @@ function AccountProfilePage() {
             </span>
           </div>
 
-          <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <div className="relative">
+          <div className="mt-6 flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+            <div className="relative group">
               {user.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt={user.fullName}
-                  className="h-20 w-20 rounded-2xl border-2 border-red-600 object-cover shadow-md"
+                  className="h-24 w-24 rounded-2xl border-2 border-red-600 object-cover shadow-lg"
                 />
               ) : (
-                <div className="grid h-20 w-20 place-items-center rounded-2xl border-2 border-red-600 bg-[#081528] text-3xl font-extrabold text-white shadow-md">
+                <div className="grid h-24 w-24 place-items-center rounded-2xl border-2 border-red-600 bg-[#081528] text-4xl font-extrabold text-white shadow-lg">
                   {initialLetter}
                 </div>
               )}
+
+              {/* Upload Overlay Button */}
+              <label
+                htmlFor="avatar-file-input"
+                className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center rounded-2xl bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <Camera className="h-6 w-6 text-gold" />
+                <span className="mt-1 text-[10px] font-bold">Change</span>
+              </label>
+              <input
+                id="avatar-file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
             </div>
 
             <div className="flex-1 text-center sm:text-left">
               <h2 className="text-xl font-bold text-[#0a1b33]">{user.username || user.fullName}</h2>
-              <p className="text-xs text-gray-500">Profile Picture Saved & Synchronized</p>
+              <p className="text-xs text-gray-500">Profile Picture Saved & Synchronized Across Bank</p>
+
+              {/* Upload Direct Buttons */}
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <label
+                  htmlFor="avatar-file-input-btn"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-red-700 transition-colors"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Upload Image File</span>
+                </label>
+                <input
+                  id="avatar-file-input-btn"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                <span className="text-xs text-gray-400">or enter image web URL below</span>
+              </div>
 
               {/* Photo URL Form */}
-              <form onSubmit={handleUpdateProfilePhoto} className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <form onSubmit={handleUpdateProfilePhoto} className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <input
                   type="url"
-                  placeholder="https://images.unsplash.com/... or direct image URL"
+                  placeholder="https://images.unsplash.com/... direct photo link"
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   className="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-[#0a1b33] focus:border-red-600 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="rounded-lg bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700 transition-colors"
+                  className="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-200 transition-colors"
                 >
-                  Update
+                  Save URL
                 </button>
               </form>
             </div>

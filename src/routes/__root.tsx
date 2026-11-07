@@ -9,6 +9,7 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { useRouterState } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { Header, Footer } from "../components/site";
@@ -115,13 +116,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const routerState = useRouterState();
+  const currentPath = routerState.location.pathname;
+
+  // Dedicated customer and admin workspace portals should NOT show public site header/footer
+  const isDedicatedPortal =
+    currentPath.startsWith("/dashboard") ||
+    currentPath.startsWith("/account-profile") ||
+    currentPath.startsWith("/admin");
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Header />
+      {!isDedicatedPortal && <Header />}
       <main><Outlet /></main>
-      <Footer />
+      {!isDedicatedPortal && <Footer />}
     </QueryClientProvider>
   );
 }

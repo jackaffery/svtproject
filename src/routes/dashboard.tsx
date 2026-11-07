@@ -150,9 +150,17 @@ function CustomerDashboardPage() {
               to="/account-profile"
               className="flex items-center gap-2 rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-foreground/20"
             >
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-gold text-[#081528] font-bold text-[11px]">
-                {initialLetter}
-              </span>
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName}
+                  className="h-6 w-6 rounded-full border border-gold object-cover"
+                />
+              ) : (
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-gold text-[#081528] font-bold text-[11px]">
+                  {initialLetter}
+                </span>
+              )}
               <span>Account & Profile</span>
             </Link>
 
@@ -171,9 +179,17 @@ function CustomerDashboardPage() {
       <main className="mx-auto max-w-7xl px-5 py-8">
         {/* Welcome Header */}
         <div className="flex items-center gap-4">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white text-2xl font-bold text-[#081528] shadow-lg">
-            {initialLetter}
-          </div>
+          {user.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={user.fullName}
+              className="h-16 w-16 shrink-0 rounded-2xl border-2 border-gold object-cover shadow-lg"
+            />
+          ) : (
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white text-2xl font-bold text-[#081528] shadow-lg">
+              {initialLetter}
+            </div>
+          )}
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Customer Dashboard</p>
             <h1 className="text-2xl font-bold text-white capitalize md:text-3xl">
