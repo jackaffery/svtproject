@@ -73,25 +73,40 @@ export function Footer() {
         <div className="md:col-span-2">
           <Logo light />
           <p className="mt-4 max-w-sm text-sm text-primary-foreground/75">Your Trust. Your Future. Your Financial Security.</p>
+          <div className="mt-4 inline-flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold">
+            <ShieldCheck className="h-4 w-4" /> FDIC Insured
+          </div>
         </div>
         <div>
           <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary-foreground/60">Explore</p>
           <ul className="mt-4 space-y-2 text-sm">
             {nav.slice(1).map((n) => <li key={n.to}><Link to={n.to} className="hover:underline">{n.label}</Link></li>)}
+            <li><Link to="/sitemap" className="hover:underline">Sitemap</Link></li>
+            <li><Link to="/accessibility" className="hover:underline">Accessibility</Link></li>
           </ul>
         </div>
         <div>
           <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary-foreground/60">Legal</p>
           <ul className="mt-4 space-y-2 text-sm">
             <li><Link to="/privacy" className="hover:underline">Privacy Policy</Link></li>
-            <li><Link to="/terms" className="hover:underline">Terms & Conditions</Link></li>
+            <li><Link to="/terms" className="hover:underline">Terms of Service</Link></li>
+            <li><Link to="/sitemap" className="hover:underline">Sitemap</Link></li>
+            <li><Link to="/accessibility" className="hover:underline">Accessibility</Link></li>
           </ul>
         </div>
       </div>
       <div className="border-t border-primary-foreground/15">
-        <p className="mx-auto max-w-7xl px-5 py-5 text-xs text-primary-foreground/60">
-          © {new Date().getFullYear()} Stronghold Vault Trust Institution. SVT is a financial services platform and does not represent itself as a licensed bank or deposit-taking institution.
-        </p>
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-xs text-primary-foreground/75 sm:flex-row">
+          <p>
+            © {new Date().getFullYear()} Stronghold Vault Trust Institution. SVT is a financial services platform. All rights reserved. <span className="ml-2 font-semibold text-gold">FDIC Insured</span>
+          </p>
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+            <Link to="/terms" className="hover:underline">Terms of Service</Link>
+            <Link to="/sitemap" className="hover:underline">Sitemap</Link>
+            <Link to="/accessibility" className="hover:underline">Accessibility</Link>
+          </div>
+        </div>
       </div>
     </footer>
   );
