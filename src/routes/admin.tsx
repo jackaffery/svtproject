@@ -306,10 +306,10 @@ function MasterSoloAdminPage() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
         <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
-          <div className="flex items-center gap-4">
-            <span className="rounded bg-red-600 px-2 py-1 text-xs font-extrabold uppercase text-white tracking-wider">
-              US
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-gold shadow-xs">
+              <Building2 className="h-5 w-5" />
+            </div>
             <span className="font-display text-lg font-bold text-[#0a1b33]">
               Stronghold Vault Trust Institution
             </span>
