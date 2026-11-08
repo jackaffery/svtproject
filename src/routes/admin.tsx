@@ -26,6 +26,8 @@ import {
   Send,
   History,
   Settings,
+  Menu,
+  X,
 } from "lucide-react";
 import { meta } from "@/components/site";
 import {
@@ -61,6 +63,7 @@ function MasterSoloAdminPage() {
   const [search, setSearch] = useState("");
   const [filterTab, setFilterTab] = useState<"All" | "Pending" | "Under Review" | "Approved" | "Declined">("All");
   const [activeMenuUserId, setActiveMenuUserId] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Active Spot Section in Admin (matching sidebar items from screenshot)
   const [activeAdminSection, setActiveAdminSection] = useState<
@@ -312,26 +315,50 @@ function MasterSoloAdminPage() {
         </div>
       )}
 
-      {/* Left Sidebar matching screenshot exactly */}
-      <aside className="w-64 shrink-0 border-r border-gray-200 bg-white">
+      {/* Mobile Drawer Backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs md:hidden"
+        />
+      )}
+
+      {/* Left Sidebar matching screenshot exactly with mobile responsive drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 border-r border-gray-200 bg-white transition-transform duration-200 md:static md:translate-x-0 ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         {/* Administrator Tag Bar */}
-        <div className="flex items-center gap-3 border-b border-gray-200 p-4">
-          <div className="grid h-10 w-10 place-items-center rounded-full bg-[#0a1b33] text-gold font-bold">
-            <Building2 className="h-5 w-5" />
+        <div className="flex items-center justify-between border-b border-gray-200 p-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-[#0a1b33] text-gold font-bold">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-bold text-gray-900">Master Solo Administrator</h2>
+              <span className="inline-block rounded bg-red-600 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">
+                Admin
+              </span>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-bold text-gray-900">Master Solo Administrator</h2>
-            <span className="inline-block rounded bg-red-600 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">
-              Admin
-            </span>
-          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="rounded-lg p-1 text-gray-500 hover:bg-gray-100 md:hidden"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Sidebar Navigation */}
-        <nav className="p-3 space-y-1 text-xs font-semibold text-gray-700">
+        <nav className="p-3 space-y-1 text-xs font-semibold text-gray-700 overflow-y-auto max-h-[calc(100vh-5rem)]">
           {/* Manage Users */}
           <button
-            onClick={() => setActiveAdminSection("users")}
+            onClick={() => {
+              setActiveAdminSection("users");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 font-bold transition-colors ${
               activeAdminSection === "users" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -346,6 +373,7 @@ function MasterSoloAdminPage() {
           {/* Wire & Transfer Operations */}
           <Link
             to="/transfer"
+            onClick={() => setIsMobileMenuOpen(false)}
             className="flex items-center justify-between rounded-lg px-3 py-2.5 text-gray-700 hover:bg-gray-100"
           >
             <div className="flex items-center gap-3">
@@ -357,7 +385,10 @@ function MasterSoloAdminPage() {
 
           {/* Transaction History (New Spot from screenshot) */}
           <button
-            onClick={() => setActiveAdminSection("history")}
+            onClick={() => {
+              setActiveAdminSection("history");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
               activeAdminSection === "history" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -371,7 +402,10 @@ function MasterSoloAdminPage() {
 
           {/* Users Deposits */}
           <button
-            onClick={() => setActiveAdminSection("deposits")}
+            onClick={() => {
+              setActiveAdminSection("deposits");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
               activeAdminSection === "deposits" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -385,7 +419,10 @@ function MasterSoloAdminPage() {
 
           {/* Loan Applications */}
           <button
-            onClick={() => setActiveAdminSection("loans")}
+            onClick={() => {
+              setActiveAdminSection("loans");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
               activeAdminSection === "loans" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -399,7 +436,10 @@ function MasterSoloAdminPage() {
 
           {/* Virtual Cards */}
           <button
-            onClick={() => setActiveAdminSection("cards")}
+            onClick={() => {
+              setActiveAdminSection("cards");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
               activeAdminSection === "cards" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -413,7 +453,10 @@ function MasterSoloAdminPage() {
 
           {/* IRS Refunds Spot */}
           <button
-            onClick={() => setActiveAdminSection("irs")}
+            onClick={() => {
+              setActiveAdminSection("irs");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
               activeAdminSection === "irs" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -427,7 +470,10 @@ function MasterSoloAdminPage() {
 
           {/* Email Services */}
           <button
-            onClick={() => setActiveAdminSection("email")}
+            onClick={() => {
+              setActiveAdminSection("email");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
               activeAdminSection === "email" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -441,7 +487,10 @@ function MasterSoloAdminPage() {
 
           {/* Administrator(s) (New Spot from screenshot) */}
           <button
-            onClick={() => setActiveAdminSection("administrators")}
+            onClick={() => {
+              setActiveAdminSection("administrators");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
               activeAdminSection === "administrators" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -455,7 +504,10 @@ function MasterSoloAdminPage() {
 
           {/* Settings (New Spot from screenshot) */}
           <button
-            onClick={() => setActiveAdminSection("settings")}
+            onClick={() => {
+              setActiveAdminSection("settings");
+              setIsMobileMenuOpen(false);
+            }}
             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
               activeAdminSection === "settings" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -469,7 +521,10 @@ function MasterSoloAdminPage() {
 
           {/* Create New User */}
           <button
-            onClick={() => setCreateUserModal(true)}
+            onClick={() => {
+              setCreateUserModal(true);
+              setIsMobileMenuOpen(false);
+            }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100 text-primary font-bold pt-3"
           >
             <PlusCircle className="h-4 w-4 text-emerald-600" />
@@ -478,7 +533,10 @@ function MasterSoloAdminPage() {
 
           <div className="pt-4 border-t border-gray-100">
             <button
-              onClick={() => setShowSignOutPrompt(true)}
+              onClick={() => {
+                setShowSignOutPrompt(true);
+                setIsMobileMenuOpen(false);
+              }}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-red-600 hover:bg-red-50 text-left"
             >
               <LogOut className="h-4 w-4" />
@@ -491,42 +549,49 @@ function MasterSoloAdminPage() {
       {/* Main Administrative Workplace */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
-          <div className="flex items-center gap-3">
+        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-6">
+          <div className="flex items-center gap-2 md:gap-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 md:hidden"
+              aria-label="Toggle navigation"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
             <button
               onClick={() => setActiveAdminSection("users")}
-              className="flex items-center gap-3 text-left focus:outline-none"
+              className="flex items-center gap-2 md:gap-3 text-left focus:outline-none"
             >
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-gold shadow-xs hover:opacity-90">
-                <Building2 className="h-5 w-5" />
+              <div className="grid h-9 w-9 md:h-10 md:w-10 place-items-center rounded-xl bg-primary text-gold shadow-xs hover:opacity-90">
+                <Building2 className="h-4 w-4 md:h-5 md:w-5" />
               </div>
-              <div>
-                <span className="font-display text-lg font-bold text-[#0a1b33] hover:underline block leading-tight">
+              <div className="min-w-0">
+                <span className="truncate font-display text-sm md:text-lg font-bold text-[#0a1b33] hover:underline block leading-tight">
                   Stronghold Vault Trust Institution
                 </span>
-                <span className="text-[10px] font-bold text-gold uppercase tracking-wider block">
+                <span className="text-[9px] md:text-[10px] font-bold text-gold uppercase tracking-wider block">
                   Admin Dashboard Access
                 </span>
               </div>
             </button>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={() => setActiveAdminSection("users")}
-              className="hidden md:inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+              className="hidden lg:inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
             >
               <Building2 className="h-3.5 w-3.5 text-gold" />
               <span>Admin Dashboard</span>
             </button>
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search user, ID, email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-72 rounded-lg border border-gray-300 bg-gray-50 py-2 pl-9 pr-3 text-xs focus:border-[#0a1b33] focus:outline-none"
+                className="w-48 md:w-72 rounded-lg border border-gray-300 bg-gray-50 py-2 pl-9 pr-3 text-xs focus:border-[#0a1b33] focus:outline-none"
               />
             </div>
             <button
@@ -542,7 +607,7 @@ function MasterSoloAdminPage() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {/* ============================================================== */}
           {/* SECTION 1: MANAGE USERS SPOT (DEFAULT) */}
           {/* ============================================================== */}

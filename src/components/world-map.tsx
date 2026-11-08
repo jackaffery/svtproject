@@ -16,12 +16,12 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-xl border border-primary-foreground/12 bg-primary-foreground/[0.04] p-3 md:p-5">
+      <div className="overflow-x-auto rounded-xl border border-primary-foreground/12 bg-primary-foreground/[0.04] p-2 sm:p-3 md:p-5">
         <svg
           viewBox={`0 0 ${MAP_W} ${MAP_H}`}
           role="img"
           aria-label="World map with every country named"
-          className="h-auto w-full min-w-[900px]"
+          className="h-auto w-full min-w-0"
         >
           <path d={spherePath} className="fill-primary-deep" />
           <path d={graticulePath} className="fill-none stroke-primary-foreground/10" strokeWidth={0.4} />
@@ -32,6 +32,7 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
               d={c.d}
               onMouseEnter={() => setHovered(c.name)}
               onMouseLeave={() => setHovered(null)}
+              onClick={() => setHovered(c.name)}
               className={
                 isPartner(c.name)
                   ? "cursor-pointer fill-gold stroke-gold-deep transition-opacity hover:opacity-80"
@@ -93,6 +94,7 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
                 className="cursor-pointer"
                 onMouseEnter={() => setHovered(m.name)}
                 onMouseLeave={() => setHovered(null)}
+                onClick={() => setHovered(m.name)}
               />
             </g>
           ))}
@@ -106,7 +108,7 @@ export function WorldMap({ partners }: { partners: readonly string[] }) {
             {isPartner(hovered) ? " — one of our twelve trading partners" : ""}
           </>
         ) : (
-          "Point at any country to read its name."
+          "Tap or point at any country or marker to read its name."
         )}
       </p>
 
