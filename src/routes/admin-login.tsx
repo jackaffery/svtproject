@@ -1,64 +1,69 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ShieldAlert, KeyRound, UserCheck, ArrowRight, Lock } from "lucide-react";
+import { ShieldAlert, KeyRound, ArrowRight, Lock } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
+import { supabase } from "@/integrations/supabase/client";
+import { getMyRoles, bootstrapFirstAdmin } from "@/lib/bank.functions";
 
 export const Route = createFileRoute("/admin-login")({
   staticData: { sitemap: false },
   head: () =>
     meta(
-      "SOLO Admin Login Portal — Stronghold Vault Trust",
-      "Executive portal authentication for bank directors and system administrators."
+      "Admin Login Portal — Stronghold Vault Trust",
+      "Restricted authentication for authorized Stronghold Vault Trust administrators."
     ),
   component: AdminLoginPage,
 });
 
 function AdminLoginPage() {
   const navigate = useNavigate();
-  const [adminUsername, setAdminUsername] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setBusy(true);
 
-    // Exact requested credentials: support@svt.online / Admin123
-    const cleanUser = adminUsername.trim().toLowerCase();
-    const cleanPass = adminPassword.trim();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
 
-    const isValidUser =
-      cleanUser === "support@svt.online" ||
-      cleanUser === "admin" ||
-      cleanUser === "admin@svtbank.com" ||
-      cleanUser === "solo";
+    if (signInError) {
+      setBusy(false);
+      setError("Invalid administrative credentials.");
+      return;
+    }
 
-    const isValidPass =
-      cleanPass === "Admin123" ||
-      cleanPass === "2026" ||
-      cleanPass === "8888";
-
-    if (isValidUser && isValidPass) {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("svt_admin_authenticated", "true");
+    let roles: string[] = [];
+    try {
+      roles = await getMyRoles({ data: undefined as never }).catch(() => []);
+      if (!roles.includes("admin")) {
+        // First-ever administrator bootstrap: only succeeds while no admin exists.
+        const { granted } = await bootstrapFirstAdmin({ data: undefined as never });
+        if (granted) roles = ["admin"];
       }
-      navigate({ to: "/admin" });
-    } else {
-      setError("Invalid Administrative Username or Password. Please use your credentials.");
+    } catch {
+      roles = [];
     }
-  };
 
-  const handleQuickDemo = () => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("svt_admin_authenticated", "true");
+    if (!roles.includes("admin")) {
+      await supabase.auth.signOut();
+      setBusy(false);
+      setError("This account does not have administrator access.");
+      return;
     }
+
     navigate({ to: "/admin" });
   };
 
   return (
     <>
-      <PageHero eyebrow="Restricted Access" title="SOLO Admin Login Portal">
-        Executive Administrative Console for Stronghold Vault Trust Institution. Authorize with security master key to control all registered bank users and ledger liquidity.
+      <PageHero eyebrow="Restricted Access" title="Admin Login Portal">
+        Administrative console for Stronghold Vault Trust Institution. Access is limited to authorized administrators and every action is recorded.
       </PageHero>
 
       <Section muted>
@@ -68,10 +73,10 @@ function AdminLoginPage() {
               <ShieldAlert className="h-7 w-7" />
             </div>
             <h2 className="mt-4 text-center text-xl font-bold text-foreground">
-              SOLO Bank Master Authentication
+              Administrator Authentication
             </h2>
             <p className="mt-1 text-center text-xs text-muted-foreground">
-              Level 4 Administrative Access Gateway
+              Authorized personnel only — all sessions are logged
             </p>
 
             {error && (
@@ -83,16 +88,16 @@ function AdminLoginPage() {
             <div className="mt-6 space-y-4">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Admin Username / Email
+                  Admin Email
                 </label>
                 <div className="relative mt-1.5">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
-                    type="text"
+                    type="email"
                     required
-                    placeholder="support@svt.online"
-                    value={adminUsername}
-                    onChange={(e) => setAdminUsername(e.target.value)}
+                    placeholder="admin@yourdomain.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full rounded-md border bg-background py-2.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
@@ -100,7 +105,7 @@ function AdminLoginPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Admin Password
+                  Password
                 </label>
                 <div className="relative mt-1.5">
                   <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -108,39 +113,28 @@ function AdminLoginPage() {
                     type="password"
                     required
                     placeholder="••••••••"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full rounded-md border bg-background py-2.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
                   />
-                </div>
-                <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Username: <strong>support@svt.online</strong></span>
-                  <span>Password: <strong>Admin123</strong></span>
                 </div>
               </div>
 
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="cta-glow flex w-full items-center justify-center gap-2 rounded-md bg-gold py-3 text-sm font-bold text-primary-deep transition-all hover:bg-gold-deep"
+                  disabled={busy}
+                  className="cta-glow flex w-full items-center justify-center gap-2 rounded-md bg-gold py-3 text-sm font-bold text-primary-deep transition-all hover:bg-gold-deep disabled:opacity-50"
                 >
-                  <span>Authorize & Enter Admin Console</span>
+                  <span>{busy ? "Verifying…" : "Authorize & Enter Admin Console"}</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* 1-Click Fast Pass */}
-              <div className="rounded-xl border border-primary/20 bg-secondary/80 p-3 text-center">
-                <p className="text-[11px] font-semibold text-primary">Single Operator Quick Entry</p>
-                <button
-                  type="button"
-                  onClick={handleQuickDemo}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary-deep px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary"
-                >
-                  <UserCheck className="h-3.5 w-3.5 text-gold" />
-                  <span>Instant 1-Click Entry to Control Panel</span>
-                </button>
-              </div>
+              <p className="text-center text-[11px] text-muted-foreground">
+                The first administrator account is activated automatically on first sign-in.
+                After that, only existing administrators can grant access.
+              </p>
             </div>
           </form>
         </div>

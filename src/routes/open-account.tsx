@@ -12,7 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
-import { registerNewUser } from "@/lib/bank-store";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/open-account")({
   staticData: { sitemap: false },
@@ -30,24 +30,20 @@ function OpenAccountPage() {
     email: "",
     phone: "",
     accountType: "Personal Checking" as "Personal Checking" | "High-Yield Savings" | "Private Wealth Trust",
-    pin: "",
-    confirmPin: "",
+    password: "",
+    confirmPassword: "",
     address: "",
     city: "",
     country: "United States",
   });
 
   const [error, setError] = useState("");
-  const [createdResult, setCreatedResult] = useState<{
-    verificationLink: string;
-    email: string;
-    fullName: string;
-    accountNumber: string;
-  } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [createdEmail, setCreatedEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
   const [resendMsg, setResendMsg] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -56,54 +52,68 @@ function OpenAccountPage() {
       return;
     }
 
-    if (!/^\d{4}$/.test(formData.pin)) {
-      setError("Security PIN must be exactly 4 digits.");
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
-    if (formData.pin !== formData.confirmPin) {
-      setError("Security PIN confirmation does not match.");
+    if (formData.password !== formData.confirmPassword) {
+      setError("Password confirmation does not match.");
       return;
     }
 
-    const { user, verificationLink } = registerNewUser({
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      accountType: formData.accountType,
-      pin: formData.pin,
-      address: formData.address,
-      city: formData.city || "New York",
-      country: formData.country,
-      initialDeposit: 0,
+    setBusy(true);
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: formData.email.trim(),
+      password: formData.password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: {
+          full_name: formData.fullName,
+          phone: formData.phone,
+          address: `${formData.address}, ${formData.city}, ${formData.country}`,
+          account_type: formData.accountType,
+        },
+      },
     });
+    setBusy(false);
 
-    setCreatedResult({
-      verificationLink,
-      email: user.email,
-      fullName: user.fullName,
-      accountNumber: user.accountNumber,
-    });
+    if (signUpError) {
+      setError(signUpError.message);
+      return;
+    }
+
+    // With email confirmation on, there is no session yet — the customer
+    // must click the link in their inbox before signing in.
+    setCreatedEmail(formData.email.trim());
   };
 
-  const handleResendEmail = () => {
+  const handleResendEmail = async () => {
+    if (!createdEmail) return;
     setResending(true);
     setResendMsg("");
-    setTimeout(() => {
-      setResending(false);
-      setResendMsg("A fresh verification email has been dispatched to your inbox.");
-    }, 900);
+    const { error: err } = await supabase.auth.resend({
+      type: "signup",
+      email: createdEmail,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setResending(false);
+    setResendMsg(
+      err
+        ? "Could not resend right now — please try again in a few minutes."
+        : "A fresh verification email has been dispatched to your inbox."
+    );
   };
 
   return (
     <>
       <PageHero eyebrow="New Client Registration" title="Open an SVT Account">
-        Complete institutional enrollment in 3 minutes. Your email will automatically receive an automated one-time verification link to activate real-time access.
+        Complete institutional enrollment in 3 minutes. Your email will automatically receive a secure verification link to activate access.
       </PageHero>
 
       <Section muted>
         <div className="mx-auto max-w-2xl">
-          {createdResult ? (
+          {createdEmail ? (
             <div className="rounded-2xl border border-gold/40 bg-card p-8 shadow-xl">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary text-gold">
                 <CheckCircle className="h-8 w-8" />
@@ -125,7 +135,7 @@ function OpenAccountPage() {
                   Check Your Email Inbox
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  An official email from <strong>STRONGHOLD VAULT TRUST INSTITUTION</strong> with your secure one-time account activation link was dispatched to <strong>{createdResult.email}</strong>.
+                  An official email from <strong>STRONGHOLD VAULT TRUST INSTITUTION</strong> with your secure account activation link was dispatched to <strong>{createdEmail}</strong>.
                 </p>
 
                 {resendMsg && (
@@ -154,10 +164,9 @@ function OpenAccountPage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-between border-t pt-4 text-xs text-muted-foreground">
-                <span>Assigned Account: <strong>****{createdResult.accountNumber.slice(-4)}</strong></span>
-                <span>Security PIN: <strong>Enforced (4-Digits)</strong></span>
-              </div>
+              <p className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground">
+                After verifying your email, our compliance team reviews every application before full access is granted.
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="rounded-2xl border bg-card p-8 shadow-sm">
@@ -168,7 +177,7 @@ function OpenAccountPage() {
                 <div>
                   <h3 className="font-semibold text-foreground">Client Information</h3>
                   <p className="text-xs text-muted-foreground">
-                    Required for identity verification and FDIC-insured record keeping.
+                    Required for identity verification and record keeping.
                   </p>
                 </div>
               </div>
@@ -184,7 +193,7 @@ function OpenAccountPage() {
                   <label className="text-xs font-bold tracking-wide uppercase text-muted-foreground">Account Type</label>
                   <select
                     value={formData.accountType}
-                    onChange={(e) => setFormData({ ...formData, accountType: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, accountType: e.target.value as typeof formData.accountType })}
                     className="mt-1.5 w-full rounded-md border bg-background px-3.5 py-2.5 text-sm font-medium focus:border-primary focus:outline-none"
                   >
                     <option value="Personal Checking">Personal Checking (Zero Monthly Fees)</option>
@@ -257,36 +266,36 @@ function OpenAccountPage() {
                   <div className="flex items-center gap-2">
                     <KeyRound className="h-4 w-4 text-gold-ink" />
                     <span className="text-xs font-bold tracking-wide uppercase text-primary">
-                      Security PIN (Required for Transactions & Login)
+                      Account Password
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Set a confidential 4-digit security PIN to authorize transfers and access your customer dashboard.
+                    Choose a secure password (at least 8 characters) to protect your customer dashboard.
                   </p>
 
                   <div className="mt-3 grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="text-xs font-semibold text-foreground">Enter 4-Digit PIN</label>
+                      <label className="text-xs font-semibold text-foreground">Enter Password</label>
                       <input
                         type="password"
-                        maxLength={4}
+                        minLength={8}
                         required
-                        placeholder="••••"
-                        value={formData.pin}
-                        onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, "") })}
-                        className="mt-1 w-full tracking-[0.4em] rounded-md border bg-background px-3 py-2 text-center text-base font-bold focus:border-primary focus:outline-none"
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-foreground">Confirm 4-Digit PIN</label>
+                      <label className="text-xs font-semibold text-foreground">Confirm Password</label>
                       <input
                         type="password"
-                        maxLength={4}
+                        minLength={8}
                         required
-                        placeholder="••••"
-                        value={formData.confirmPin}
-                        onChange={(e) => setFormData({ ...formData, confirmPin: e.target.value.replace(/\D/g, "") })}
-                        className="mt-1 w-full tracking-[0.4em] rounded-md border bg-background px-3 py-2 text-center text-base font-bold focus:border-primary focus:outline-none"
+                        placeholder="••••••••"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
                       />
                     </div>
                   </div>
@@ -321,9 +330,10 @@ function OpenAccountPage() {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="cta-glow flex w-full items-center justify-center gap-2 rounded-md bg-gold py-3.5 text-base font-bold text-primary-deep transition-all hover:bg-gold-deep"
+                    disabled={busy}
+                    className="cta-glow flex w-full items-center justify-center gap-2 rounded-md bg-gold py-3.5 text-base font-bold text-primary-deep transition-all hover:bg-gold-deep disabled:opacity-50"
                   >
-                    <span>Submit Application & Generate Verification Link</span>
+                    <span>{busy ? "Submitting…" : "Submit Application"}</span>
                     <ArrowRight className="h-5 w-5" />
                   </button>
                 </div>
