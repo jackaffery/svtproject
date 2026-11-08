@@ -31,6 +31,7 @@ import { meta } from "@/components/site";
 import {
   getBankUsers,
   updateUserStatus,
+  updateUserApplicationStatus,
   updateUserBalance,
   updateUserDetails,
   deleteBankUser,
@@ -38,8 +39,10 @@ import {
   registerNewUser,
   adminUpdateIrsRefundStatus,
   updateUserCard,
+  addAdminGeneratedTransaction,
   type BankUser,
   type BankCard,
+  type BankTransaction,
   type IrsRefundRecord,
 } from "@/lib/bank-store";
 
@@ -72,10 +75,27 @@ function MasterSoloAdminPage() {
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
 
-  // Institutional Settings State
-  const [wireApprovalThreshold, setWireApprovalThreshold] = useState("100000");
-  const [twoFactorEnforcement, setTwoFactorEnforcement] = useState(true);
-  const [smtpStatus] = useState("Operational (256-bit TLS)");
+  // Generate Transaction Modal
+  const [generateTxUser, setGenerateTxUser] = useState<BankUser | null>(null);
+  const [genTxType, setGenTxType] = useState<"deposit" | "withdrawal" | "transfer" | "wire" | "fee">("deposit");
+  const [genTxCategory, setGenTxCategory] = useState<"internal" | "domestic" | "international">("domestic");
+  const [genTxAmount, setGenTxAmount] = useState("5000");
+  const [genTxDescription, setGenTxDescription] = useState("Treasury Commercial Deposit");
+  const [genTxStatus, setGenTxStatus] = useState<"completed" | "pending" | "processing">("completed");
+
+  // View Receipt Modal
+  const [viewingReceiptTx, setViewingReceiptTx] = useState<(BankTransaction & { clientName: string; clientAccount: string }) | null>(null);
+
+  // View Login Activity Modal
+  const [loginActivityUser, setLoginActivityUser] = useState<BankUser | null>(null);
+
+  // IRS Sub-tab state
+  const [irsSubTab, setIrsSubTab] = useState<"all" | "pending" | "settings">("all");
+  const [irsDirectDepositThreshold, setIrsDirectDepositThreshold] = useState("25000");
+  const [irsAutoDirectCredit, setIrsAutoDirectCredit] = useState(true);
+
+  // Sign out confirmation modal / option
+  const [showSignOutPrompt, setShowSignOutPrompt] = useState(false);
 
   // Modal states
   const [editingUser, setEditingUser] = useState<BankUser | null>(null);
@@ -121,6 +141,43 @@ function MasterSoloAdminPage() {
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
+
+  // Application Approval / Rejection Handlers
+  const handleApproveApplication = (u: BankUser) => {
+    updateUserApplicationStatus(u.id, "approved", "active");
+    loadData();
+    showToast(`Application APPROVED: Account ${u.accountNumber} activated for ${u.fullName}`);
+  };
+
+  const handleDeclineApplication = (u: BankUser) => {
+    if (confirm(`Decline / Reject application for ${u.fullName}?`)) {
+      updateUserApplicationStatus(u.id, "declined", "suspended");
+      loadData();
+      showToast(`Application DECLINED: ${u.fullName} rejected.`);
+    }
+  };
+
+  // Generate Transaction submit
+  const handleExecuteGenerateTx = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!generateTxUser) return;
+    const numAmt = parseFloat(genTxAmount) || 0;
+    const finalAmt = genTxType === "withdrawal" || genTxType === "fee" ? -Math.abs(numAmt) : Math.abs(numAmt);
+
+    const createdTx = addAdminGeneratedTransaction(generateTxUser.id, {
+      type: genTxType,
+      transferCategory: genTxCategory,
+      description: genTxDescription,
+      amount: finalAmt,
+      status: genTxStatus,
+    });
+
+    if (createdTx) {
+      loadData();
+      showToast(`Transaction ${createdTx.reference} generated successfully for ${generateTxUser.fullName}!`);
+      setGenerateTxUser(null);
+    }
+  };
 
   // Admin Actions
   const handleToggleDormant = (u: BankUser) => {
@@ -414,13 +471,13 @@ function MasterSoloAdminPage() {
           </button>
 
           <div className="pt-4 border-t border-gray-100">
-            <Link
-              to="/admin-login"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-red-600 hover:bg-red-50"
+            <button
+              onClick={() => setShowSignOutPrompt(true)}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-red-600 hover:bg-red-50 text-left"
             >
               <LogOut className="h-4 w-4" />
               <span>Sign Out</span>
-            </Link>
+            </button>
           </div>
         </nav>
       </aside>
@@ -430,15 +487,32 @@ function MasterSoloAdminPage() {
         {/* Top Navbar */}
         <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-gold shadow-xs">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <span className="font-display text-lg font-bold text-[#0a1b33]">
-              Stronghold Vault Trust Institution
-            </span>
+            <button
+              onClick={() => setActiveAdminSection("users")}
+              className="flex items-center gap-3 text-left focus:outline-none"
+            >
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-gold shadow-xs hover:opacity-90">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="font-display text-lg font-bold text-[#0a1b33] hover:underline block leading-tight">
+                  Stronghold Vault Trust Institution
+                </span>
+                <span className="text-[10px] font-bold text-gold uppercase tracking-wider block">
+                  Admin Dashboard Access
+                </span>
+              </div>
+            </button>
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setActiveAdminSection("users")}
+              className="hidden md:inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Building2 className="h-3.5 w-3.5 text-gold" />
+              <span>Admin Dashboard</span>
+            </button>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <input
@@ -602,6 +676,23 @@ function MasterSoloAdminPage() {
 
                       <td className="py-4 px-6 text-right relative">
                         <div className="flex items-center justify-end gap-2">
+                          {u.status === "pending_verification" || u.applicationStatus === "pending" ? (
+                            <>
+                              <button
+                                onClick={() => handleApproveApplication(u)}
+                                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleDeclineApplication(u)}
+                                className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 shadow-xs"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          ) : null}
+
                           <button
                             onClick={() => openEditModal(u)}
                             className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
@@ -656,7 +747,11 @@ function MasterSoloAdminPage() {
                             </button>
 
                             <button
-                              onClick={() => showToast(`Automated message dispatched to ${u.email}`)}
+                              onClick={() => {
+                                setEmailUser(u);
+                                setEmailSubject("Important Institutional Account Notice");
+                                setEmailBody(`Hello ${u.fullName},\n\nWe are writing to provide an institutional update on your Stronghold Vault Trust account.\n\nBest regards,\nMaster Administration`);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100"
                             >
                               <Mail className="h-4 w-4 text-gray-500" />
@@ -674,11 +769,22 @@ function MasterSoloAdminPage() {
                             </button>
 
                             <button
-                              onClick={() => showToast(`Audit trail recorded for ${u.fullName}`)}
+                              onClick={() => setLoginActivityUser(u)}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100"
                             >
                               <FileText className="h-4 w-4 text-gray-500" />
                               <span>Login Activity</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setGenerateTxUser(u);
+                                setGenTxDescription(`Administrative Credit Adjustment for ${u.fullName}`);
+                              }}
+                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"
+                            >
+                              <PlusCircle className="h-4 w-4 text-indigo-600" />
+                              <span>Generate Transaction</span>
                             </button>
 
                             <button
@@ -741,6 +847,7 @@ function MasterSoloAdminPage() {
                         <th className="p-3">Type</th>
                         <th className="p-3">Status</th>
                         <th className="p-3 text-right">Amount</th>
+                        <th className="p-3 text-right">Receipt</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 font-mono">
@@ -779,6 +886,14 @@ function MasterSoloAdminPage() {
                             }`}
                           >
                             {tx.amount >= 0 ? "+" : ""}${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="p-3 text-right font-sans">
+                            <button
+                              onClick={() => setViewingReceiptTx(tx)}
+                              className="rounded-lg border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-gold/20 shadow-xs"
+                            >
+                              View Receipt
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -988,65 +1103,165 @@ function MasterSoloAdminPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
-              {users.map((u) => (
-                <div key={u.id} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
-                  <div className="flex items-center justify-between border-b pb-3">
-                    <div>
-                      <span className="font-bold text-base text-[#0a1b33] capitalize">{u.fullName}</span>
-                      <span className="ml-3 font-mono text-xs text-gray-500">Acct #{u.accountNumber}</span>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-700">Checking: ${u.balance.toLocaleString()}</span>
-                  </div>
+            {/* IRS Sub-Navigation Tabs */}
+            <div className="flex items-center gap-2 border-b border-gray-200 pb-3">
+              <button
+                onClick={() => setIrsSubTab("all")}
+                className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
+                  irsSubTab === "all"
+                    ? "bg-[#0a1b33] text-white shadow-xs"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                }`}
+              >
+                All Refunds ({users.reduce((acc, u) => acc + (u.irsRefunds?.length || 0), 0)})
+              </button>
+              <button
+                onClick={() => setIrsSubTab("pending")}
+                className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
+                  irsSubTab === "pending"
+                    ? "bg-[#0a1b33] text-white shadow-xs"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                }`}
+              >
+                Pending Refunds ({users.reduce((acc, u) => acc + (u.irsRefunds?.filter(r => r.depositStatus !== "deposited").length || 0), 0)})
+              </button>
+              <button
+                onClick={() => setIrsSubTab("settings")}
+                className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
+                  irsSubTab === "settings"
+                    ? "bg-[#0a1b33] text-white shadow-xs"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                }`}
+              >
+                Refund Settings
+              </button>
+            </div>
 
-                  <div className="mt-4 space-y-3">
-                    {(u.irsRefunds || []).map((refund) => (
-                      <div key={refund.id} className="flex items-center justify-between rounded-xl border p-4 bg-gray-50/50">
+            {/* Sub-tab 1 & 2: All Refunds / Pending Refunds */}
+            {(irsSubTab === "all" || irsSubTab === "pending") && (
+              <div className="space-y-4">
+                {users.map((u) => {
+                  const filteredRefunds = (u.irsRefunds || []).filter((r) =>
+                    irsSubTab === "pending" ? r.depositStatus !== "deposited" : true
+                  );
+                  if (irsSubTab === "pending" && filteredRefunds.length === 0) return null;
+
+                  return (
+                    <div key={u.id} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
+                      <div className="flex items-center justify-between border-b pb-3">
                         <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-[#0a1b33]">{refund.taxYear}</span>
-                            <span
-                              className={`rounded px-2 py-0.5 text-[10px] font-extrabold uppercase ${
-                                refund.depositStatus === "deposited"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-amber-100 text-amber-800"
-                              }`}
-                            >
-                              {refund.depositStatus}
-                            </span>
-                          </div>
-                          <p className="font-mono text-xs text-gray-500 mt-1">Trace #{refund.treasuryTraceNumber}</p>
-                          {refund.notes && <p className="text-xs text-gray-600 mt-1">{refund.notes}</p>}
+                          <span className="font-bold text-base text-[#0a1b33] capitalize">{u.fullName}</span>
+                          <span className="ml-3 font-mono text-xs text-gray-500">Acct #{u.accountNumber}</span>
                         </div>
-
-                        <div className="flex items-center gap-4">
-                          <span className="font-mono text-base font-bold text-emerald-600">
-                            +${refund.refundAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                          </span>
-                          {refund.depositStatus !== "deposited" && (
-                            <button
-                              onClick={() => {
-                                adminUpdateIrsRefundStatus(
-                                  u.id,
-                                  refund.id,
-                                  "deposited",
-                                  "Treasury electronic deposit confirmed by Solo Admin."
-                                );
-                                loadData();
-                                showToast(`Credited IRS refund of $${refund.refundAmount.toLocaleString()} to ${u.fullName}`);
-                              }}
-                              className="rounded-lg bg-emerald-600 px-4 py-2 font-bold text-white hover:bg-emerald-700 text-xs shadow-xs"
-                            >
-                              Approve & Deposit
-                            </button>
-                          )}
-                        </div>
+                        <span className="text-xs font-bold text-emerald-700">Checking: ${u.balance.toLocaleString()}</span>
                       </div>
-                    ))}
+
+                      <div className="mt-4 space-y-3">
+                        {filteredRefunds.map((refund) => (
+                          <div key={refund.id} className="flex items-center justify-between rounded-xl border p-4 bg-gray-50/50">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-[#0a1b33]">{refund.taxYear}</span>
+                                <span
+                                  className={`rounded px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                                    refund.depositStatus === "deposited"
+                                      ? "bg-emerald-100 text-emerald-800"
+                                      : "bg-amber-100 text-amber-800"
+                                  }`}
+                                >
+                                  {refund.depositStatus}
+                                </span>
+                              </div>
+                              <p className="font-mono text-xs text-gray-500 mt-1">Trace #{refund.treasuryTraceNumber}</p>
+                              {refund.notes && <p className="text-xs text-gray-600 mt-1">{refund.notes}</p>}
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                              <span className="font-mono text-base font-bold text-emerald-600">
+                                +${refund.refundAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                              </span>
+                              {refund.depositStatus !== "deposited" && (
+                                <button
+                                  onClick={() => {
+                                    adminUpdateIrsRefundStatus(
+                                      u.id,
+                                      refund.id,
+                                      "deposited",
+                                      "Treasury electronic deposit confirmed by Solo Admin."
+                                    );
+                                    loadData();
+                                    showToast(`Credited IRS refund of $${refund.refundAmount.toLocaleString()} to ${u.fullName}`);
+                                  }}
+                                  className="rounded-lg bg-emerald-600 px-4 py-2 font-bold text-white hover:bg-emerald-700 text-xs shadow-xs"
+                                >
+                                  Approve & Deposit
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {filteredRefunds.length === 0 && (
+                          <p className="text-xs text-gray-400">No refunds in this category.</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Sub-tab 3: Refund Settings */}
+            {irsSubTab === "settings" && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-6 text-xs text-gray-700">
+                <div className="border-b pb-4">
+                  <h3 className="font-bold text-sm text-[#0a1b33] mb-1">IRS Direct Deposit Clearance Limit</h3>
+                  <p className="text-gray-500 mb-3">Treasury ACH tax refunds exceeding this amount require manual admin sign-off.</p>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-gray-600">$</span>
+                    <input
+                      type="number"
+                      value={irsDirectDepositThreshold}
+                      onChange={(e) => setIrsDirectDepositThreshold(e.target.value)}
+                      className="rounded-lg border border-gray-300 p-2 font-mono font-bold text-sm text-[#0a1b33] w-48"
+                    />
+                    <button
+                      onClick={() => showToast(`IRS clearance threshold saved at $${Number(irsDirectDepositThreshold).toLocaleString()}`)}
+                      className="rounded-lg bg-[#0a1b33] px-4 py-2 font-bold text-white hover:bg-[#122b52]"
+                    >
+                      Save Limit
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="border-b pb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-sm text-[#0a1b33] mb-1">Automated Treasury Electronic Credit</h3>
+                    <p className="text-gray-500">Automatically post verified IRS deposits below the threshold to Advantage Checking.</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIrsAutoDirectCredit(!irsAutoDirectCredit);
+                      showToast(`Automatic IRS direct credit: ${!irsAutoDirectCredit ? "ENABLED" : "DISABLED"}`);
+                    }}
+                    className={`rounded-full px-4 py-1.5 font-bold ${
+                      irsAutoDirectCredit ? "bg-emerald-100 text-emerald-800" : "bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {irsAutoDirectCredit ? "Auto-Deposit Enabled" : "Manual Queue Enforced"}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-sm text-[#0a1b33] mb-1">Internal Revenue Service Direct Link</h3>
+                    <p className="text-gray-500">Treasury Financial Management Services (FMS) Batch Automated Feed.</p>
+                  </div>
+                  <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-md">
+                    IRS Treasury Gateway Synchronized (Active)
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1576,6 +1791,267 @@ function MasterSoloAdminPage() {
                 className="rounded-lg border px-4 py-2 font-bold text-gray-600 hover:bg-gray-100"
               >
                 Close IRS Spot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* View Transaction Receipt Modal */}
+      {viewingReceiptTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-gold" />
+                <div>
+                  <h3 className="text-base font-bold text-[#0a1b33]">STRONGHOLD VAULT TRUST</h3>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono">Official Transaction Receipt</p>
+                </div>
+              </div>
+              <button onClick={() => setViewingReceiptTx(null)} className="text-gray-400 hover:text-gray-700 text-base font-bold">✕</button>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2 font-mono">
+              <div className="flex justify-between">
+                <span className="text-gray-500 font-sans">Reference:</span>
+                <span className="font-bold text-[#0a1b33]">{viewingReceiptTx.reference}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 font-sans">Date & Time:</span>
+                <span className="text-gray-700">{new Date(viewingReceiptTx.date).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 font-sans">Status:</span>
+                <span className="rounded bg-emerald-100 text-emerald-800 px-2 py-0.5 font-sans font-bold uppercase text-[10px]">
+                  {viewingReceiptTx.status}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 font-sans">Category / Type:</span>
+                <span className="text-gray-700 uppercase">{viewingReceiptTx.transferCategory || viewingReceiptTx.type}</span>
+              </div>
+              <div className="border-t pt-2 flex justify-between font-sans">
+                <span className="text-gray-500">Account Holder:</span>
+                <span className="font-bold text-[#0a1b33]">{viewingReceiptTx.clientName} ({viewingReceiptTx.clientAccount})</span>
+              </div>
+              <div className="flex justify-between font-sans">
+                <span className="text-gray-500">Description:</span>
+                <span className="text-gray-800 text-right max-w-xs">{viewingReceiptTx.description}</span>
+              </div>
+              <div className="border-t pt-2 flex justify-between text-sm">
+                <span className="font-sans font-bold text-[#0a1b33]">Amount Transacted:</span>
+                <span className={`font-bold ${viewingReceiptTx.amount >= 0 ? "text-emerald-600" : "text-gray-900"}`}>
+                  {viewingReceiptTx.amount >= 0 ? "+" : ""}${viewingReceiptTx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button
+                onClick={() => {
+                  window.print();
+                }}
+                className="rounded-lg border px-4 py-2 font-bold text-gray-700 hover:bg-gray-100"
+              >
+                Print Receipt
+              </button>
+              <button
+                onClick={() => setViewingReceiptTx(null)}
+                className="rounded-lg bg-[#0a1b33] px-5 py-2 font-bold text-white hover:bg-[#122b52]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Transaction Modal */}
+      {generateTxUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <form
+            onSubmit={handleExecuteGenerateTx}
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800"
+          >
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="text-base font-bold text-[#0a1b33]">Generate Transaction</h3>
+                <p className="text-[11px] text-gray-500">Client: <strong>{generateTxUser.fullName}</strong> ({generateTxUser.accountNumber})</p>
+              </div>
+              <button type="button" onClick={() => setGenerateTxUser(null)} className="text-gray-400 hover:text-gray-700 text-base font-bold">✕</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold uppercase text-gray-500">Transaction Type</label>
+                <select
+                  value={genTxType}
+                  onChange={(e) => setGenTxType(e.target.value as any)}
+                  className="mt-1 w-full rounded border border-gray-300 p-2"
+                >
+                  <option value="deposit">Deposit (+ Credit)</option>
+                  <option value="withdrawal">Withdrawal (- Debit)</option>
+                  <option value="transfer">Transfer</option>
+                  <option value="wire">Wire Payment</option>
+                  <option value="fee">Institutional Fee</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold uppercase text-gray-500">Transfer Category</label>
+                <select
+                  value={genTxCategory}
+                  onChange={(e) => setGenTxCategory(e.target.value as any)}
+                  className="mt-1 w-full rounded border border-gray-300 p-2"
+                >
+                  <option value="domestic">Domestic Transfer</option>
+                  <option value="internal">Internal SVT Transfer</option>
+                  <option value="international">International Wire</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold uppercase text-gray-500">Amount ($ USD)</label>
+              <input
+                type="number"
+                step="any"
+                required
+                value={genTxAmount}
+                onChange={(e) => setGenTxAmount(e.target.value)}
+                className="mt-1 w-full rounded border border-gray-300 p-2 font-mono font-bold text-base text-[#0a1b33]"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold uppercase text-gray-500">Description / Memo</label>
+              <input
+                type="text"
+                required
+                value={genTxDescription}
+                onChange={(e) => setGenTxDescription(e.target.value)}
+                className="mt-1 w-full rounded border border-gray-300 p-2"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold uppercase text-gray-500">Execution Status</label>
+              <select
+                value={genTxStatus}
+                onChange={(e) => setGenTxStatus(e.target.value as any)}
+                className="mt-1 w-full rounded border border-gray-300 p-2"
+              >
+                <option value="completed">Completed (Immediately Posts & Updates Balance)</option>
+                <option value="pending">Pending (Awaiting Verification)</option>
+                <option value="processing">Processing</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => setGenerateTxUser(null)}
+                className="rounded border px-4 py-2 font-bold text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded bg-[#0a1b33] px-5 py-2 font-bold text-white hover:bg-[#122b52]"
+              >
+                Post Transaction
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Login Activity Modal */}
+      {loginActivityUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="text-base font-bold text-[#0a1b33]">Login Activity & Security Logs</h3>
+                <p className="text-[11px] text-gray-500">{loginActivityUser.fullName} • {loginActivityUser.email}</p>
+              </div>
+              <button onClick={() => setLoginActivityUser(null)} className="text-gray-400 hover:text-gray-700 text-base font-bold">✕</button>
+            </div>
+
+            <div className="space-y-3 font-mono">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-1">
+                <div className="flex justify-between font-sans">
+                  <span className="font-bold text-emerald-700">Recent Portal Session</span>
+                  <span className="text-[10px] text-gray-400">Authorized</span>
+                </div>
+                <p className="text-[11px] text-gray-600">IP: 198.51.100.44 (Washington, D.C.)</p>
+                <p className="text-[11px] text-gray-600">Device: Chrome on Windows 11 (256-bit TLS encrypted)</p>
+                <p className="text-[10px] text-gray-400 font-sans">Timestamp: {new Date().toLocaleString()}</p>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-1">
+                <div className="flex justify-between font-sans">
+                  <span className="font-bold text-gray-700">Prior Account Session</span>
+                  <span className="text-[10px] text-gray-400">Authorized</span>
+                </div>
+                <p className="text-[11px] text-gray-600">IP: 198.51.100.12 (New York, NY)</p>
+                <p className="text-[11px] text-gray-600">Device: Safari Mobile (iOS 18.1)</p>
+                <p className="text-[10px] text-gray-400 font-sans">Timestamp: {new Date(Date.now() - 86400000 * 2).toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t">
+              <button
+                onClick={() => setLoginActivityUser(null)}
+                className="rounded-lg bg-[#0a1b33] px-5 py-2 font-bold text-white hover:bg-[#122b52]"
+              >
+                Close Logs
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Sign-Out Prompt Modal */}
+      {showSignOutPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-center">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-red-100 text-red-600">
+              <LogOut className="h-6 w-6" />
+            </div>
+            <h3 className="text-base font-bold text-[#0a1b33]">Sign Out of Solo Admin</h3>
+            <p className="text-gray-500 text-[11px]">
+              Where would you like to navigate after signing out of the administration console?
+            </p>
+
+            <div className="space-y-2 pt-2">
+              <Link
+                to="/"
+                onClick={() => {
+                  if (typeof window !== "undefined") sessionStorage.removeItem("svt_admin_authenticated");
+                  setShowSignOutPrompt(false);
+                }}
+                className="cta-glow flex w-full items-center justify-center gap-2 rounded-lg bg-gold py-2.5 text-xs font-bold text-primary-deep transition-all hover:bg-gold-deep"
+              >
+                <span>Return to Bank Homepage (Home)</span>
+              </Link>
+
+              <Link
+                to="/admin-login"
+                onClick={() => {
+                  if (typeof window !== "undefined") sessionStorage.removeItem("svt_admin_authenticated");
+                  setShowSignOutPrompt(false);
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-100"
+              >
+                <span>Admin Login Portal</span>
+              </Link>
+
+              <button
+                onClick={() => setShowSignOutPrompt(false)}
+                className="w-full text-center text-gray-400 hover:text-gray-600 font-semibold py-1 text-[11px]"
+              >
+                Cancel
               </button>
             </div>
           </div>

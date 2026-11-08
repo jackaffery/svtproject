@@ -53,7 +53,7 @@ function CustomerDashboardPage() {
 
   const handleLogout = () => {
     setCurrentSession(null);
-    navigate({ to: "/login" });
+    navigate({ to: "/" });
   };
 
   const handleSendWire = (e: React.FormEvent) => {

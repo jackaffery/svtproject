@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CheckCircle2, XCircle, ArrowRight, ShieldCheck, KeyRound } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/verify-email")({
 });
 
 function VerifyEmailPage() {
+  const navigate = useNavigate();
   const { token, email } = useSearch({ from: "/verify-email" });
   const [verifiedUser, setVerifiedUser] = useState<BankUser | null>(null);
   const [status, setStatus] = useState<"checking" | "success" | "invalid">("checking");
@@ -28,13 +29,18 @@ function VerifyEmailPage() {
       if (user) {
         setVerifiedUser(user);
         setStatus("success");
+        // Automatically redirect to customer dashboard / customer home page after verification
+        const timer = setTimeout(() => {
+          navigate({ to: "/dashboard" });
+        }, 1800);
+        return () => clearTimeout(timer);
       } else {
         setStatus("invalid");
       }
     } else {
       setStatus("invalid");
     }
-  }, [token, email]);
+  }, [token, email, navigate]);
 
   return (
     <>
