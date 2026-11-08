@@ -5,6 +5,7 @@ import { meta, PageHero, Section } from "@/components/site";
 import { findUserByEmail, setCurrentSession, getBankUsers } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/login")({
+  staticData: { sitemap: false },
   head: () =>
     meta(
       "Customer Login — Stronghold Vault Trust Institution",

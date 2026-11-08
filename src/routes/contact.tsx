@@ -12,6 +12,7 @@ const faqs: [string, string][] = [
 ];
 
 export const Route = createFileRoute("/contact")({
+  staticData: { sitemap: true },
   head: () => meta("Contact Us — Stronghold Vault Trust", "Reach SVT customer support, read FAQs and send us a message."),
   component: Contact,
 });

@@ -16,6 +16,7 @@ import { meta } from "@/components/site";
 import { getCurrentSession, type BankUser } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/digital-assets")({
+  staticData: { sitemap: "exclude-subtree" },
   head: () =>
     meta(
       "Digital Assets — Stronghold Vault Trust",

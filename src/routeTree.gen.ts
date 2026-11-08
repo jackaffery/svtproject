@@ -27,6 +27,7 @@ import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SitemapRouteImport } from './routes/sitemap'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TransferRouteImport } from './routes/transfer'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
@@ -121,6 +122,11 @@ const SitemapRoute = SitemapRouteImport.update({
   path: '/sitemap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/security': typeof SecurityRoute
   '/services': typeof ServicesRoute
   '/sitemap': typeof SitemapRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/transfer': typeof TransferRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/security': typeof SecurityRoute
   '/services': typeof ServicesRoute
   '/sitemap': typeof SitemapRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/transfer': typeof TransferRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/security': typeof SecurityRoute
   '/services': typeof ServicesRoute
   '/sitemap': typeof SitemapRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/transfer': typeof TransferRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/services'
     | '/sitemap'
+    | '/sitemap.xml'
     | '/terms'
     | '/transfer'
     | '/verify-email'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/services'
     | '/sitemap'
+    | '/sitemap.xml'
     | '/terms'
     | '/transfer'
     | '/verify-email'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/services'
     | '/sitemap'
+    | '/sitemap.xml'
     | '/terms'
     | '/transfer'
     | '/verify-email'
@@ -298,6 +310,7 @@ export interface RootRouteChildren {
   SecurityRoute: typeof SecurityRoute
   ServicesRoute: typeof ServicesRoute
   SitemapRoute: typeof SitemapRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TransferRoute: typeof TransferRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -431,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -474,6 +494,7 @@ const rootRouteChildren: RootRouteChildren = {
   SecurityRoute: SecurityRoute,
   ServicesRoute: ServicesRoute,
   SitemapRoute: SitemapRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TransferRoute: TransferRoute,
   VerifyEmailRoute: VerifyEmailRoute,

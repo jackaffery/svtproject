@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { meta, PageHero, Section } from "@/components/site";
 
 export const Route = createFileRoute("/terms")({
+  staticData: { sitemap: true },
   head: () => meta("Terms & Conditions — Stronghold Vault Trust", "The terms that govern use of Stronghold Vault Trust Institution services."),
   component: () => (
     <>

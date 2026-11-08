@@ -19,6 +19,7 @@ import { meta } from "@/components/site";
 import { getCurrentSession, updateUserCard, type BankUser, type BankCard } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/cards")({
+  staticData: { sitemap: "exclude-subtree" },
   head: () =>
     meta(
       "Cards & Limits — Stronghold Vault Trust",

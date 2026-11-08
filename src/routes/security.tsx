@@ -12,6 +12,7 @@ const items = [
 ] as const;
 
 export const Route = createFileRoute("/security")({
+  staticData: { sitemap: true },
   head: () => meta("Security — Stronghold Vault Trust", "How SVT protects your account and personal information."),
   component: () => (
     <>
