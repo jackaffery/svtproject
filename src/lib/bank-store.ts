@@ -332,7 +332,7 @@ export function registerNewUser(data: {
 
   const randomAcc = Math.floor(1000000000 + Math.random() * 9000000000).toString();
   const randomSav = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-  const initDep = Number(data.initialDeposit) || 1000;
+  const initDep = Number(data.initialDeposit) || 0;
   const usernameGuess = data.email.split("@")[0] || "user" + Math.floor(Math.random() * 1000);
 
   const newUser: BankUser = {
@@ -365,7 +365,7 @@ export function registerNewUser(data: {
     cards: [],
     digitalAssets: [],
     irsRefunds: [],
-    transactions: [
+    transactions: initDep > 0 ? [
       {
         id: "tx_" + Date.now(),
         type: "deposit",
@@ -385,7 +385,7 @@ export function registerNewUser(data: {
         reference: `INIT-${randomAcc.slice(-6)}`,
         auditTrail: [{ timestamp: new Date().toISOString(), action: "Initial Deposit Credited", performedBy: "SYSTEM" }],
       },
-    ],
+    ] : [],
   };
 
   users.unshift(newUser);

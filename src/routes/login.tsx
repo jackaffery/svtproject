@@ -30,6 +30,16 @@ function LoginPage() {
       return;
     }
 
+    if (user.status === "pending_verification") {
+      setError("Please check your email and click the one-time activation link to activate your account before logging in.");
+      return;
+    }
+
+    if (user.status === "suspended") {
+      setError("This account is currently blocked or under administrative review. Please contact support.");
+      return;
+    }
+
     if (user.pin !== pin) {
       setError("Incorrect 4-digit PIN. Please try again.");
       return;

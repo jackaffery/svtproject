@@ -35,7 +35,6 @@ function OpenAccountPage() {
     address: "",
     city: "",
     country: "United States",
-    initialDeposit: "2500",
   });
 
   const [error, setError] = useState("");
@@ -75,7 +74,7 @@ function OpenAccountPage() {
       address: formData.address,
       city: formData.city || "New York",
       country: formData.country,
-      initialDeposit: parseFloat(formData.initialDeposit) || 1000,
+      initialDeposit: 0,
     });
 
     setCreatedResult({
@@ -108,24 +107,29 @@ function OpenAccountPage() {
                 <CheckCircle className="h-8 w-8" />
               </div>
               <h2 className="mt-5 text-center text-2xl font-bold text-foreground">
-                Account Created Successfully!
+                Registration Successful
               </h2>
-              <p className="mt-2 text-center text-sm text-muted-foreground">
-                Welcome, <strong>{createdResult.fullName}</strong>. An automated one-time email verification link has been dispatched to <strong>{createdResult.email}</strong>.
+              <div className="mt-4 rounded-xl border border-gold/30 bg-gold/10 p-5 text-center">
+                <p className="text-base font-semibold text-primary-deep">
+                  “Your registration was successful. Please check your email and click the activation link we sent you to access your account for the first time.”
+                </p>
+              </div>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                A unique, secure one-time activation link has been dispatched to <strong>{createdResult.email}</strong> for <strong>{createdResult.fullName}</strong>.
               </p>
 
-              {/* Simulated Email Dispatch Card */}
+              {/* Secure Customer Email Simulation & Dispatch Information */}
               <div className="mt-6 rounded-xl border border-border bg-secondary p-5">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-xs font-semibold text-primary">
-                    <Mail className="h-4 w-4 text-gold" /> Automated One-Time Dispatch Box
+                    <Mail className="h-4 w-4 text-gold" /> One-Time Activation Dispatch Box
                   </span>
                   <span className="rounded bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-primary-deep uppercase">
-                    Security Token Ready
+                    One-Time Token Ready
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  In live production, this token is sent via our SMTP/Postmark gateway. For instant testing, click below to verify and enter your dashboard immediately:
+                  In accordance with security requirements, direct dashboard access is prevented until the one-time activation token is verified. For testing or local preview, open the link directly below:
                 </p>
 
                 <div className="mt-4 flex flex-col gap-2">
@@ -133,7 +137,7 @@ function OpenAccountPage() {
                     href={createdResult.verificationLink}
                     className="cta-glow flex items-center justify-center gap-2 rounded-lg bg-gold px-5 py-3 text-sm font-bold text-primary-deep transition-all hover:bg-gold-deep"
                   >
-                    <span>Click to Verify & Enter Customer Dashboard</span>
+                    <span>Open Activation Link (Simulate Email Tap)</span>
                     <ExternalLink className="h-4 w-4" />
                   </a>
 
@@ -235,13 +239,12 @@ function OpenAccountPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold tracking-wide uppercase text-muted-foreground">Initial Deposit ($ USD)</label>
+                    <label className="text-xs font-bold tracking-wide uppercase text-muted-foreground">Citizenship / Country</label>
                     <input
-                      type="number"
-                      min="100"
-                      step="100"
-                      value={formData.initialDeposit}
-                      onChange={(e) => setFormData({ ...formData, initialDeposit: e.target.value })}
+                      type="text"
+                      required
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                       className="mt-1.5 w-full rounded-md border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
                     />
                   </div>
