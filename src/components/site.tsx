@@ -45,7 +45,7 @@ export function Header() {
         </nav>
         <div className="hidden items-center gap-2 lg:flex">
           <Link to="/admin-login" className="rounded-md border border-primary/20 bg-secondary/80 px-3 py-2 text-xs font-bold text-primary hover:border-primary hover:bg-secondary">SOLO Admin</Link>
-          <Link to="/login" className="rounded-md border px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary">Customer Login</Link>
+          <Link to="/login" className="rounded-md border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-bold text-gold-deep hover:bg-gold/20 hover:border-gold transition-colors">Customer Login</Link>
           <Link to="/open-account" className="cta-glow rounded-md bg-gold px-5 py-2.5 text-sm font-bold text-primary-deep transition-colors hover:bg-gold-deep">Open an Account</Link>
         </div>
         <button aria-label="Toggle menu" className="rounded-md border p-2 lg:hidden" onClick={() => setOpen(!open)}>
@@ -59,7 +59,7 @@ export function Header() {
               <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className="rounded-md px-3 py-2 font-medium hover:bg-secondary">{n.label}</Link>
             ))}
             <Link to="/admin-login" onClick={() => setOpen(false)} className="rounded-md border border-primary/20 bg-secondary/80 px-3 py-2 text-center text-xs font-bold text-primary">SOLO Admin Login Portal</Link>
-            <Link to="/login" onClick={() => setOpen(false)} className="mt-2 rounded-md border px-3 py-2 text-center font-semibold">Customer Login</Link>
+            <Link to="/login" onClick={() => setOpen(false)} className="mt-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-center font-bold text-gold-deep hover:bg-gold/20">Customer Login</Link>
             <Link to="/open-account" onClick={() => setOpen(false)} className="rounded-md bg-gold px-3 py-2.5 text-center font-bold text-primary-deep">Open an Account</Link>
           </div>
         </div>
