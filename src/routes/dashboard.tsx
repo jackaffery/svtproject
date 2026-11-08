@@ -110,22 +110,6 @@ function CustomerDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#081528] text-white">
-      {/* Top Banner (If Impersonated or Staff Mode) */}
-      <div className="flex flex-wrap items-center justify-between border-b border-primary-foreground/10 bg-[#061120] px-4 py-2 text-xs text-primary-foreground/80">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-          <span>Institutional Customer Online Banking — Encrypted Session Active</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/admin"
-            className="rounded bg-gold/20 px-2 py-0.5 text-[11px] font-bold text-gold hover:bg-gold/30"
-          >
-            ← Return to Master Admin Console
-          </Link>
-        </div>
-      </div>
-
       {/* Primary Customer Portal Navbar */}
       <header className="border-b border-primary-foreground/10 bg-[#0a1b33]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">

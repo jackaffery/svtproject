@@ -411,7 +411,7 @@ export function updateUserDetails(userId: string, updates: Partial<BankUser>): B
   return merged;
 }
 
-export function verifyUserEmail(token: string, email: string): BankUser | null {
+export function verifyUserEmail(token: string, email: string): { user: BankUser | null; reason?: "pending_approval" | "invalid" } {
   const users = getBankUsers();
   const user = users.find(
     (u) =>
@@ -419,16 +419,29 @@ export function verifyUserEmail(token: string, email: string): BankUser | null {
       u.verificationToken &&
       u.verificationToken === token
   );
-  if (!user) return null;
+  if (!user) return { user: null, reason: "invalid" };
 
-  user.status = "active";
-  user.applicationStatus = "approved";
   user.verifiedAt = new Date().toISOString();
   // Expire token so it functions strictly as a ONE-TIME verification link
   user.verificationToken = "";
-  saveBankUsers(users);
-  setCurrentSession(user);
-  return user;
+
+  // If already approved by admin or automatically approved, activate
+  if (user.applicationStatus === "approved" || !user.applicationStatus) {
+    user.status = "active";
+    user.applicationStatus = "approved";
+    saveBankUsers(users);
+    setCurrentSession(user);
+    return { user };
+  } else if (user.applicationStatus === "declined") {
+    user.status = "suspended";
+    saveBankUsers(users);
+    return { user, reason: "pending_approval" };
+  } else {
+    // If pending or under_review, mark verified but preserve admin approval workflow
+    user.status = "pending_verification";
+    saveBankUsers(users);
+    return { user, reason: "pending_approval" };
+  }
 }
 
 export function updateUserApplicationStatus(

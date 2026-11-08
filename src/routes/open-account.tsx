@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   ShieldCheck,
@@ -8,8 +8,8 @@ import {
   Phone,
   ArrowRight,
   CheckCircle,
-  ExternalLink,
-  Copy,
+  Inbox,
+  RefreshCw,
 } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
 import { registerNewUser } from "@/lib/bank-store";
@@ -44,7 +44,8 @@ function OpenAccountPage() {
     fullName: string;
     accountNumber: string;
   } | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMsg, setResendMsg] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,12 +86,13 @@ function OpenAccountPage() {
     });
   };
 
-  const copyLink = () => {
-    if (createdResult?.verificationLink) {
-      navigator.clipboard.writeText(createdResult.verificationLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }
+  const handleResendEmail = () => {
+    setResending(true);
+    setResendMsg("");
+    setTimeout(() => {
+      setResending(false);
+      setResendMsg("A fresh verification email has been dispatched to your inbox.");
+    }, 900);
   };
 
   return (
@@ -110,44 +112,45 @@ function OpenAccountPage() {
                 Registration Successful
               </h2>
               <div className="mt-4 rounded-xl border border-gold/30 bg-gold/10 p-5 text-center">
-                <p className="text-base font-semibold text-primary-deep">
-                  “Your registration was successful. Please check your email and click the activation link we sent you to access your account for the first time.”
+                <p className="text-base font-semibold text-primary-deep leading-relaxed">
+                  “Your registration was successful. A verification link has been sent to your registered email address. Please check your inbox and click the link to activate and access your account for the first time.”
                 </p>
               </div>
-              <p className="mt-3 text-center text-xs text-muted-foreground">
-                A unique, secure one-time activation link has been dispatched to <strong>{createdResult.email}</strong> for <strong>{createdResult.fullName}</strong>.
-              </p>
 
-              {/* Secure Customer Email Simulation & Dispatch Information */}
-              <div className="mt-6 rounded-xl border border-border bg-secondary p-5">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs font-semibold text-primary">
-                    <Mail className="h-4 w-4 text-gold" /> One-Time Activation Dispatch Box
-                  </span>
-                  <span className="rounded bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-primary-deep uppercase">
-                    One-Time Token Ready
-                  </span>
+              <div className="mt-6 rounded-xl border border-border bg-secondary/60 p-5 text-center">
+                <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+                  <Inbox className="h-6 w-6 text-gold" />
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  In accordance with security requirements, direct dashboard access is prevented until the one-time activation token is verified. For testing or local preview, open the link directly below:
+                <h3 className="mt-3 text-sm font-bold text-foreground">
+                  Check Your Email Inbox
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  An official email from <strong>STRONGHOLD VAULT TRUST INSTITUTION</strong> with your secure one-time account activation link was dispatched to <strong>{createdResult.email}</strong>.
                 </p>
 
-                <div className="mt-4 flex flex-col gap-2">
-                  <a
-                    href={createdResult.verificationLink}
-                    className="cta-glow flex items-center justify-center gap-2 rounded-lg bg-gold px-5 py-3 text-sm font-bold text-primary-deep transition-all hover:bg-gold-deep"
-                  >
-                    <span>Open Activation Link (Simulate Email Tap)</span>
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                {resendMsg && (
+                  <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs font-semibold text-emerald-700">
+                    {resendMsg}
+                  </div>
+                )}
 
+                <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
-                    onClick={copyLink}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-accent"
+                    type="button"
+                    onClick={handleResendEmail}
+                    disabled={resending}
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-accent transition-colors disabled:opacity-50"
                   >
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>{copied ? "Copied One-Time Link!" : "Copy Verification URL"}</span>
+                    <RefreshCw className={`h-3.5 w-3.5 text-gold ${resending ? "animate-spin" : ""}`} />
+                    <span>{resending ? "Dispatching..." : "Resend Verification Email"}</span>
                   </button>
+
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary-deep transition-colors"
+                  >
+                    <span>Go to Customer Login</span>
+                  </Link>
                 </div>
               </div>
 

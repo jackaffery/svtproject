@@ -22,13 +22,16 @@ function VerifyEmailPage() {
   const navigate = useNavigate();
   const { token, email } = useSearch({ from: "/verify-email" });
   const [verifiedUser, setVerifiedUser] = useState<BankUser | null>(null);
-  const [status, setStatus] = useState<"checking" | "success" | "invalid">("checking");
+  const [status, setStatus] = useState<"checking" | "success" | "pending_approval" | "invalid">("checking");
 
   useEffect(() => {
     if (token && email) {
-      const user = verifyUserEmail(token, email);
-      if (user) {
-        setVerifiedUser(user);
+      const result = verifyUserEmail(token, email);
+      if (result.user && result.reason === "pending_approval") {
+        setVerifiedUser(result.user);
+        setStatus("pending_approval");
+      } else if (result.user) {
+        setVerifiedUser(result.user);
         setStatus("success");
         // Automatically redirect to customer dashboard / customer home page after verification
         const timer = setTimeout(() => {
@@ -93,6 +96,48 @@ function VerifyEmailPage() {
                 >
                   <span>Go to Customer Dashboard</span>
                   <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {status === "pending_approval" && verifiedUser && (
+            <div>
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-amber-500/15 text-amber-600">
+                <CheckCircle2 className="h-10 w-10" />
+              </div>
+              <h2 className="mt-4 text-2xl font-bold text-foreground">Email Verified</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Your email address has been confirmed. Your account application is currently <strong>awaiting administrator approval</strong>.
+              </p>
+
+              <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-left text-xs">
+                <div className="flex justify-between py-1">
+                  <span className="text-muted-foreground">Account Holder:</span>
+                  <span className="font-semibold text-foreground">{verifiedUser.fullName}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-muted-foreground">Application Status:</span>
+                  <span className="font-semibold text-amber-600 uppercase">Under Administrative Review</span>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Our compliance officers review new applications promptly. You will be notified once full access is unlocked.
+                </p>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-2">
+                <Link
+                  to="/"
+                  className="cta-glow flex w-full items-center justify-center gap-2 rounded-md bg-gold py-3 text-sm font-bold text-primary-deep transition-all hover:bg-gold-deep"
+                >
+                  <span>Return to Institutional Homepage</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/contact"
+                  className="rounded-md border border-border px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-secondary"
+                >
+                  Contact Client Support
                 </Link>
               </div>
             </div>
