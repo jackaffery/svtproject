@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
-import { Menu, ShieldCheck, UserPlus, X } from "lucide-react";
+import { useState, useEffect, type ReactNode } from "react";
+import { Menu, ShieldCheck, UserPlus, X, Bell } from "lucide-react";
+import { getWebsiteContentConfig, type WebsiteContentConfig } from "@/lib/bank-store";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -30,8 +31,21 @@ export function Logo({ light = false }: { light?: boolean }) {
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [config, setConfig] = useState<WebsiteContentConfig>(getWebsiteContentConfig());
+
+  useEffect(() => {
+    setConfig(getWebsiteContentConfig());
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+    <>
+      {config.noticeBannerActive && config.noticeBanner && (
+        <div className="bg-[#0a1b33] border-b border-gold/30 px-4 py-2 text-center text-xs font-semibold text-gold flex items-center justify-center gap-2">
+          <Bell className="h-3.5 w-3.5 text-gold animate-bounce" />
+          <span>{config.noticeBanner}</span>
+        </div>
+      )}
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-3 lg:flex lg:justify-between">
         <Logo />
         <nav className="hidden items-center gap-6 lg:flex">

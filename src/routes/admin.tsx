@@ -28,6 +28,10 @@ import {
   Settings,
   Menu,
   X,
+  Globe,
+  Radio,
+  Sliders,
+  Check,
 } from "lucide-react";
 import { meta } from "@/components/site";
 import {
@@ -42,10 +46,16 @@ import {
   adminUpdateIrsRefundStatus,
   updateUserCard,
   addAdminGeneratedTransaction,
+  getSystemActivities,
+  markAllActivitiesRead,
+  getWebsiteContentConfig,
+  updateWebsiteContentConfig,
   type BankUser,
   type BankCard,
   type BankTransaction,
   type IrsRefundRecord,
+  type SystemActivityLog,
+  type WebsiteContentConfig,
 } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/admin")({
@@ -67,8 +77,15 @@ function MasterSoloAdminPage() {
 
   // Active Spot Section in Admin (matching sidebar items from screenshot)
   const [activeAdminSection, setActiveAdminSection] = useState<
-    "users" | "history" | "deposits" | "loans" | "cards" | "irs" | "email" | "administrators" | "settings"
+    "users" | "history" | "deposits" | "loans" | "cards" | "irs" | "email" | "administrators" | "settings" | "cms" | "activity"
   >("users");
+
+  // Centralized System Activity Monitoring & Notifications
+  const [activities, setActivities] = useState<SystemActivityLog[]>([]);
+  const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
+
+  // Centralized Website Content Management
+  const [siteConfig, setSiteConfig] = useState<WebsiteContentConfig>(getWebsiteContentConfig());
 
   // Selected User for Card Limit Adjustment
   const [selectedUserForCard, setSelectedUserForCard] = useState<BankUser | null>(null);
@@ -128,6 +145,8 @@ function MasterSoloAdminPage() {
 
   const loadData = () => {
     setUsers([...getBankUsers()]);
+    setActivities([...getSystemActivities()]);
+    setSiteConfig(getWebsiteContentConfig());
   };
 
   useEffect(() => {
@@ -502,6 +521,40 @@ function MasterSoloAdminPage() {
             <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "administrators" ? "rotate-90" : ""}`} />
           </button>
 
+          {/* Real-Time Activity Monitoring */}
+          <button
+            onClick={() => {
+              setActiveAdminSection("activity");
+              setIsMobileMenuOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "activity" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Radio className="h-4 w-4 text-emerald-600 animate-pulse" />
+              <span>Real-Time Activity</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "activity" ? "rotate-90" : ""}`} />
+          </button>
+
+          {/* Website Content Management (CMS) */}
+          <button
+            onClick={() => {
+              setActiveAdminSection("cms");
+              setIsMobileMenuOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition-colors font-bold ${
+              activeAdminSection === "cms" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Globe className="h-4 w-4 text-blue-600" />
+              <span>Website Content</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "cms" ? "rotate-90" : ""}`} />
+          </button>
+
           {/* Settings (New Spot from screenshot) */}
           <button
             onClick={() => {
@@ -594,12 +647,80 @@ function MasterSoloAdminPage() {
                 className="w-48 md:w-72 rounded-lg border border-gray-300 bg-gray-50 py-2 pl-9 pr-3 text-xs focus:border-[#0a1b33] focus:outline-none"
               />
             </div>
-            <button
-              onClick={() => showToast("No new security alerts.")}
-              className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
-            >
-              <Bell className="h-5 w-5" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowNotificationDrawer(!showNotificationDrawer)}
+                className="relative rounded-full p-2 text-gray-500 hover:bg-gray-100"
+                aria-label="Admin Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {activities.filter((a) => !a.read).length > 0 && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white">
+                    {activities.filter((a) => !a.read).length}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Center Popup */}
+              {showNotificationDrawer && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 top-12 z-50 w-80 sm:w-96 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl space-y-3"
+                >
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <div className="flex items-center gap-2">
+                      <Radio className="h-4 w-4 text-emerald-600 animate-pulse" />
+                      <span className="font-bold text-sm text-[#0a1b33]">Live Admin Notification Center</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        markAllActivitiesRead();
+                        loadData();
+                        showToast("All activities marked as reviewed.");
+                      }}
+                      className="text-[11px] font-semibold text-primary hover:underline"
+                    >
+                      Mark all read
+                    </button>
+                  </div>
+
+                  <div className="max-h-72 overflow-y-auto space-y-2">
+                    {activities.length === 0 ? (
+                      <p className="py-6 text-center text-xs text-gray-400">No recent alerts or activity.</p>
+                    ) : (
+                      activities.slice(0, 10).map((act) => (
+                        <div
+                          key={act.id}
+                          className={`rounded-lg border p-2.5 text-xs transition-colors ${
+                            act.read ? "border-gray-100 bg-gray-50/50" : "border-amber-200 bg-amber-50/30"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[#0a1b33]">{act.title}</span>
+                            <span className="text-[10px] text-gray-400 font-mono">
+                              {new Date(act.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[11px] text-gray-600">{act.description}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="border-t pt-2 text-center">
+                    <button
+                      onClick={() => {
+                        setActiveAdminSection("activity");
+                        setShowNotificationDrawer(false);
+                      }}
+                      className="text-xs font-bold text-primary hover:underline"
+                    >
+                      Open Full Real-Time Audit Log →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="grid h-8 w-8 place-items-center rounded-full bg-[#0a1b33] text-xs font-bold text-white">
               A
             </div>
@@ -1530,6 +1651,209 @@ function MasterSoloAdminPage() {
                 <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-md">
                   {smtpStatus}
                 </span>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ============================================================== */}
+        {/* SECTION 10: REAL-TIME ACTIVITY AUDIT LOG */}
+        {/* ============================================================== */}
+        {activeAdminSection === "activity" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Radio className="h-5 w-5 text-emerald-600 animate-pulse" />
+                  <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Real-Time Activity Stream</h1>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Comprehensive institutional event log: user registrations, email activations, wire submissions, KYC reviews, and security actions.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  markAllActivitiesRead();
+                  loadData();
+                  showToast("All activities marked as acknowledged.");
+                }}
+                className="rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50"
+              >
+                Mark All Acknowledged
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
+              <div className="space-y-3">
+                {activities.map((act) => (
+                  <div
+                    key={act.id}
+                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border p-4 gap-3 transition-colors ${
+                      act.severity === "critical"
+                        ? "border-red-200 bg-red-50/50"
+                        : act.severity === "warning"
+                        ? "border-amber-200 bg-amber-50/40"
+                        : act.severity === "success"
+                        ? "border-emerald-200 bg-emerald-50/40"
+                        : "border-gray-100 bg-gray-50/60"
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                            act.severity === "critical"
+                              ? "bg-red-200 text-red-900"
+                              : act.severity === "warning"
+                              ? "bg-amber-200 text-amber-900"
+                              : act.severity === "success"
+                              ? "bg-emerald-200 text-emerald-900"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {act.category}
+                        </span>
+                        <h4 className="font-bold text-sm text-[#0a1b33]">{act.title}</h4>
+                      </div>
+                      <p className="text-xs text-gray-600">{act.description}</p>
+                      {act.userName && (
+                        <p className="text-[11px] text-gray-400 font-mono">
+                          Client: <strong>{act.userName}</strong> {act.reference ? `• Ref: ${act.reference}` : ""}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="font-mono text-[11px] text-gray-400">
+                        {new Date(act.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* SECTION 11: WEBSITE CONTENT MANAGEMENT (CMS) */}
+        {/* ============================================================== */}
+        {activeAdminSection === "cms" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-blue-600" />
+                  <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Central Website Content Management</h1>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Update public website announcements, notice banners, contact lines, APY rates, and operational disclosures in real time.
+                </p>
+              </div>
+              <span className="rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-bold text-blue-700">
+                Live Public Synchronization Active
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-6 text-xs text-gray-700">
+              {/* Notice Banner */}
+              <div className="border-b pb-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-sm text-[#0a1b33]">Global Public Top Notice Banner</h3>
+                    <p className="text-gray-500">Display institution-wide alert across all public pages.</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const updated = updateWebsiteContentConfig({ noticeBannerActive: !siteConfig.noticeBannerActive });
+                      setSiteConfig(updated);
+                      showToast(`Notice banner ${updated.noticeBannerActive ? "ENABLED" : "DISABLED"}`);
+                    }}
+                    className={`rounded-full px-4 py-1.5 font-bold ${
+                      siteConfig.noticeBannerActive ? "bg-emerald-100 text-emerald-800" : "bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {siteConfig.noticeBannerActive ? "Published (Live)" : "Hidden"}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={siteConfig.noticeBanner}
+                  onChange={(e) => setSiteConfig({ ...siteConfig, noticeBanner: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 p-2.5 text-xs focus:border-[#0a1b33] focus:outline-none"
+                />
+              </div>
+
+              {/* Announcements */}
+              <div className="border-b pb-4 space-y-3">
+                <h3 className="font-bold text-sm text-[#0a1b33]">Homepage Featured Institutional Announcement</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="font-bold uppercase text-gray-500">Announcement Headline</label>
+                    <input
+                      type="text"
+                      value={siteConfig.announcementTitle}
+                      onChange={(e) => setSiteConfig({ ...siteConfig, announcementTitle: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#0a1b33] focus:outline-none font-bold text-[#0a1b33]"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold uppercase text-gray-500">High-Yield Savings Rate</label>
+                    <input
+                      type="text"
+                      value={siteConfig.savingsApy}
+                      onChange={(e) => setSiteConfig({ ...siteConfig, savingsApy: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-xs font-mono font-bold text-emerald-700"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="font-bold uppercase text-gray-500">Announcement Body</label>
+                  <textarea
+                    rows={3}
+                    value={siteConfig.announcementBody}
+                    onChange={(e) => setSiteConfig({ ...siteConfig, announcementBody: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#0a1b33] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Support Contact Lines */}
+              <div className="border-b pb-4 space-y-3">
+                <h3 className="font-bold text-sm text-[#0a1b33]">Customer Care & Escalation Contact Info</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="font-bold uppercase text-gray-500">Support Telephone</label>
+                    <input
+                      type="text"
+                      value={siteConfig.supportPhone}
+                      onChange={(e) => setSiteConfig({ ...siteConfig, supportPhone: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#0a1b33] focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold uppercase text-gray-500">Support Desk Email</label>
+                    <input
+                      type="email"
+                      value={siteConfig.supportEmail}
+                      onChange={(e) => setSiteConfig({ ...siteConfig, supportEmail: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#0a1b33] focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateWebsiteContentConfig(siteConfig);
+                    showToast("Website content and public notices published live across institution portal!");
+                  }}
+                  className="rounded-lg bg-[#0a1b33] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#122b52] transition-colors shadow-sm"
+                >
+                  Save & Publish Live to Website
+                </button>
               </div>
             </div>
           </div>

@@ -390,6 +390,16 @@ export function registerNewUser(data: {
 
   users.unshift(newUser);
   saveBankUsers(users);
+
+  addSystemActivity({
+    category: "application",
+    title: "New Customer Registration",
+    description: `Applicant ${data.fullName} registered for ${data.accountType}. Application pending verification.`,
+    userId: newUser.id,
+    userName: data.fullName,
+    severity: "info",
+  });
+
   return { user: newUser, verificationLink };
 }
 
@@ -431,6 +441,16 @@ export function verifyUserEmail(token: string, email: string): { user: BankUser 
     user.applicationStatus = "approved";
     saveBankUsers(users);
     setCurrentSession(user);
+
+    addSystemActivity({
+      category: "application",
+      title: "Email Verified & Activated",
+      description: `Client ${user.fullName} completed one-time email activation successfully.`,
+      userId: user.id,
+      userName: user.fullName,
+      severity: "success",
+    });
+
     return { user };
   } else if (user.applicationStatus === "declined") {
     user.status = "suspended";
@@ -440,6 +460,16 @@ export function verifyUserEmail(token: string, email: string): { user: BankUser 
     // If pending or under_review, mark verified but preserve admin approval workflow
     user.status = "pending_verification";
     saveBankUsers(users);
+
+    addSystemActivity({
+      category: "application",
+      title: "Email Verified (Pending Admin Approval)",
+      description: `Client ${user.fullName} verified email; application awaiting Admin sign-off.`,
+      userId: user.id,
+      userName: user.fullName,
+      severity: "warning",
+    });
+
     return { user, reason: "pending_approval" };
   }
 }
@@ -570,6 +600,16 @@ export function executeMoneyTransfer(params: {
   };
 
   user.transactions.unshift(newTx);
+
+  addSystemActivity({
+    category: "transfer",
+    title: "Transfer Dispatched",
+    description: `${user.fullName} sent $${params.amount.toLocaleString()} to ${params.recipientName} (${params.recipientBank}). Ref: ${ref}`,
+    userId: user.id,
+    userName: user.fullName,
+    reference: ref,
+    severity: params.amount > 25000 ? "warning" : "info",
+  });
 
   // If save beneficiary
   if (params.saveBeneficiary) {
@@ -864,4 +904,138 @@ export function setCurrentSession(user: BankUser | null): void {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
     localStorage.setItem(SESSION_KEY, JSON.stringify(user));
   }
+}
+
+// -------------------------------------------------------------
+// CENTRALIZED SYSTEM ACTIVITY MONITORING & NOTIFICATION LOGS
+// -------------------------------------------------------------
+export interface SystemActivityLog {
+  id: string;
+  timestamp: string;
+  category: "application" | "transfer" | "deposit" | "security" | "support" | "account";
+  title: string;
+  description: string;
+  userId?: string | undefined;
+  userName?: string | undefined;
+  reference?: string | undefined;
+  severity: "info" | "warning" | "success" | "critical";
+  read: boolean;
+}
+
+const ACTIVITIES_KEY = "svt_system_activities_v3";
+
+const INITIAL_ACTIVITIES: SystemActivityLog[] = [
+  {
+    id: "act_101",
+    timestamp: new Date().toISOString(),
+    category: "security",
+    title: "Master Solo Administration Session Active",
+    description: "Solo Administrator support@svt.online authenticated securely.",
+    severity: "info",
+    read: true,
+  },
+  {
+    id: "act_102",
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    category: "account",
+    title: "New Application Verified",
+    description: "Account 45643224892 approved and activated under FDIC standard.",
+    userId: "usr_svt_234662",
+    userName: "jack ray affery",
+    severity: "success",
+    read: false,
+  },
+];
+
+export function getSystemActivities(): SystemActivityLog[] {
+  if (typeof window === "undefined") return INITIAL_ACTIVITIES;
+  try {
+    const raw = localStorage.getItem(ACTIVITIES_KEY);
+    if (!raw) {
+      localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(INITIAL_ACTIVITIES));
+      return INITIAL_ACTIVITIES;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return INITIAL_ACTIVITIES;
+  }
+}
+
+export function addSystemActivity(act: Omit<SystemActivityLog, "id" | "timestamp" | "read">): SystemActivityLog {
+  const current = getSystemActivities();
+  const newLog: SystemActivityLog = {
+    ...act,
+    id: "act_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+    timestamp: new Date().toISOString(),
+    read: false,
+  };
+  current.unshift(newLog);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(current.slice(0, 200)));
+  }
+  return newLog;
+}
+
+export function markAllActivitiesRead(): void {
+  const current = getSystemActivities();
+  const updated = current.map((a) => ({ ...a, read: true }));
+  if (typeof window !== "undefined") {
+    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(updated));
+  }
+}
+
+// -------------------------------------------------------------
+// CENTRALIZED WEBSITE CONTENT CONFIGURATION
+// -------------------------------------------------------------
+export interface WebsiteContentConfig {
+  institutionName: string;
+  tagline: string;
+  noticeBanner: string;
+  noticeBannerActive: boolean;
+  supportPhone: string;
+  supportEmail: string;
+  wireThresholdNotice: string;
+  maintenanceMode: boolean;
+  announcementTitle: string;
+  announcementBody: string;
+  savingsApy: string;
+}
+
+const CONTENT_CONFIG_KEY = "svt_site_content_config_v3";
+
+const DEFAULT_CONTENT_CONFIG: WebsiteContentConfig = {
+  institutionName: "Stronghold Vault Trust Institution",
+  tagline: "Your Trust. Your Future. Your Financial Security.",
+  noticeBanner: "Official Notice: Scheduled Federal Reserve wire clearing window operates from 08:00 to 17:00 EST.",
+  noticeBannerActive: true,
+  supportPhone: "+1 (800) 842-7878",
+  supportEmail: "support@svt.online",
+  wireThresholdNotice: "Transfers over $25,000 undergo automated treasury risk audit prior to release.",
+  maintenanceMode: false,
+  announcementTitle: "Institutional Custody & Digital Asset Vaults Online",
+  announcementBody: "Stronghold Vault Trust has synchronized multi-signature digital custody for premier client portfolios.",
+  savingsApy: "4.85% APY",
+};
+
+export function getWebsiteContentConfig(): WebsiteContentConfig {
+  if (typeof window === "undefined") return DEFAULT_CONTENT_CONFIG;
+  try {
+    const raw = localStorage.getItem(CONTENT_CONFIG_KEY);
+    if (!raw) {
+      localStorage.setItem(CONTENT_CONFIG_KEY, JSON.stringify(DEFAULT_CONTENT_CONFIG));
+      return DEFAULT_CONTENT_CONFIG;
+    }
+    return { ...DEFAULT_CONTENT_CONFIG, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_CONTENT_CONFIG;
+  }
+}
+
+export function updateWebsiteContentConfig(updates: Partial<WebsiteContentConfig>): WebsiteContentConfig {
+  const current = getWebsiteContentConfig();
+  const merged = { ...current, ...updates };
+  if (typeof window !== "undefined") {
+    localStorage.setItem(CONTENT_CONFIG_KEY, JSON.stringify(merged));
+  }
+  return merged;
 }
