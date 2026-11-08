@@ -95,6 +95,11 @@ function MasterSoloAdminPage() {
   const [irsDirectDepositThreshold, setIrsDirectDepositThreshold] = useState("25000");
   const [irsAutoDirectCredit, setIrsAutoDirectCredit] = useState(true);
 
+  // Display-only controls; no operational policy or email service is configured here.
+  const [wireApprovalThreshold, setWireApprovalThreshold] = useState("");
+  const [twoFactorEnforcement, setTwoFactorEnforcement] = useState(true);
+  const smtpStatus = "Not configured";
+
   // Sign out confirmation modal / option
   const [showSignOutPrompt, setShowSignOutPrompt] = useState(false);
 

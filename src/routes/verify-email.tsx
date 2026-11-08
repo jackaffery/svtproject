@@ -41,6 +41,7 @@ function VerifyEmailPage() {
     } else {
       setStatus("invalid");
     }
+    return undefined;
   }, [token, email, navigate]);
 
   return (
