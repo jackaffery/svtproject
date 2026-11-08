@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Lock, Mail, KeyRound, ArrowRight, ShieldCheck, UserCheck } from "lucide-react";
+import { Lock, Mail, KeyRound, ArrowRight } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
-import { findUserByEmail, setCurrentSession, getBankUsers } from "@/lib/bank-store";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   staticData: { sitemap: false },
@@ -17,51 +17,51 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [pin, setPin] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setBusy(true);
 
-    const user = findUserByEmail(email);
-    if (!user) {
-      setError("No account found matching this email address.");
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (signInError) {
+      setBusy(false);
+      setError(
+        signInError.message.toLowerCase().includes("email not confirmed")
+          ? "Please confirm your email first — check your inbox for the verification link."
+          : "Invalid email or password. Please try again."
+      );
       return;
     }
 
-    if (user.status === "pending_verification") {
-      setError("Please check your email and click the one-time activation link to activate your account before logging in.");
+    // Check the account status before sending the customer through.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("status")
+      .single();
+
+    const status = profile?.status ?? "pending_approval";
+    if (status === "suspended" || status === "closed" || status === "rejected") {
+      await supabase.auth.signOut();
+      setBusy(false);
+      setError("This account is currently under administrative review. Please contact support.");
       return;
     }
 
-    if (user.status === "suspended") {
-      setError("This account is currently blocked or under administrative review. Please contact support.");
-      return;
-    }
-
-    if (user.pin !== pin) {
-      setError("Incorrect 4-digit PIN. Please try again.");
-      return;
-    }
-
-    setCurrentSession(user);
     navigate({ to: "/dashboard" });
-  };
-
-  const handleQuickLoginDemo = () => {
-    const users = getBankUsers();
-    const demo = users[0];
-    if (demo) {
-      setCurrentSession(demo);
-      navigate({ to: "/dashboard" });
-    }
   };
 
   return (
     <>
       <PageHero eyebrow="Secure Access" title="Customer Login">
-        Sign in with your registered email and 4-digit security PIN to manage accounts, execute transfers, and view statements.
+        Sign in with your registered email and password to manage accounts, execute transfers, and view statements.
       </PageHero>
 
       <Section muted>
@@ -101,18 +101,17 @@ function LoginPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  4-Digit Security PIN
+                  Password
                 </label>
                 <div className="relative mt-1.5">
                   <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
                     type="password"
-                    maxLength={4}
                     required
-                    placeholder="••••"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                    className="w-full tracking-[0.4em] rounded-md border bg-background py-2.5 pl-9 pr-3 text-center text-base font-bold focus:border-primary focus:outline-none"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-md border bg-background py-2.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
               </div>
@@ -120,23 +119,11 @@ function LoginPage() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="cta-glow flex w-full items-center justify-center gap-2 rounded-md bg-gold py-3 text-sm font-bold text-primary-deep transition-all hover:bg-gold-deep"
+                  disabled={busy}
+                  className="cta-glow flex w-full items-center justify-center gap-2 rounded-md bg-gold py-3 text-sm font-bold text-primary-deep transition-all hover:bg-gold-deep disabled:opacity-50"
                 >
-                  <span>Sign In to Dashboard</span>
+                  <span>{busy ? "Signing in…" : "Sign In to Dashboard"}</span>
                   <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Demo 1-Click Access Pill */}
-              <div className="rounded-lg border border-gold/40 bg-gold/10 p-3 text-center">
-                <p className="text-[11px] font-semibold text-primary">Observer / Demo Profile Ready</p>
-                <button
-                  type="button"
-                  onClick={handleQuickLoginDemo}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary-deep"
-                >
-                  <UserCheck className="h-3.5 w-3.5 text-gold" />
-                  <span>Instant Login as Alexander Sterling (PIN: 2026)</span>
                 </button>
               </div>
 
@@ -144,8 +131,8 @@ function LoginPage() {
                 <Link to="/open-account" className="font-semibold text-primary hover:underline">
                   Open an Account →
                 </Link>
-                <Link to="/contact" className="hover:underline">
-                  Forgot PIN?
+                <Link to="/reset-password" className="hover:underline">
+                  Forgot password?
                 </Link>
               </div>
             </div>
