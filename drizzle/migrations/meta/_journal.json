@@ -15,6 +15,13 @@
       "when": 1794181704529,
       "tag": "0001_profile_metadata_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794181795897,
+      "tag": "0002_cards_and_digital_assets",
+      "breakpoints": true
     }
   ]
 }

@@ -158,6 +158,100 @@ export type Database = {
           },
         ]
       }
+      cards: {
+        Row: {
+          card_number: string
+          cardholder_name: string
+          created_at: string
+          daily_atm_limit: number
+          daily_spending_limit: number
+          expiry_date: string
+          id: string
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          card_number?: string
+          cardholder_name?: string
+          created_at?: string
+          daily_atm_limit?: number
+          daily_spending_limit?: number
+          expiry_date?: string
+          id?: string
+          status?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          card_number?: string
+          cardholder_name?: string
+          created_at?: string
+          daily_atm_limit?: number
+          daily_spending_limit?: number
+          expiry_date?: string
+          id?: string
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      digital_assets: {
+        Row: {
+          balance: number
+          created_at: string
+          custody_address: string
+          fiat_value_usd: number
+          id: string
+          last_audit: string
+          name: string
+          status: string
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          custody_address?: string
+          fiat_value_usd?: number
+          id?: string
+          last_audit?: string
+          name?: string
+          status?: string
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          custody_address?: string
+          fiat_value_usd?: number
+          id?: string
+          last_audit?: string
+          name?: string
+          status?: string
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_assets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           audience: string
