@@ -8,6 +8,13 @@
       "when": 1794181582517,
       "tag": "0000_core_banking_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794181704529,
+      "tag": "0001_profile_metadata_fields",
+      "breakpoints": true
     }
   ]
 }
