@@ -765,7 +765,7 @@ function MasterSoloAdminPage() {
                           ) : null}
 
                           <button
-                            onClick={() => openEditModal(u)}
+                            onClick={(e) => handleActionClick(e, u.id)}
                             className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
                           >
                             Review
@@ -786,7 +786,10 @@ function MasterSoloAdminPage() {
                             className="absolute right-6 top-12 z-50 w-64 rounded-xl border border-gray-200 bg-white p-2 text-left shadow-2xl space-y-1"
                           >
                             <button
-                              onClick={() => handleToggleDormant(u)}
+                              onClick={() => {
+                                handleToggleDormant(u);
+                                setActiveMenuUserId(null);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100"
                             >
                               <RotateCcw className="h-4 w-4 text-blue-600" />
@@ -794,7 +797,10 @@ function MasterSoloAdminPage() {
                             </button>
 
                             <button
-                              onClick={() => handleClearAccount(u)}
+                              onClick={() => {
+                                handleClearAccount(u);
+                                setActiveMenuUserId(null);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
                             >
                               <RotateCcw className="h-4 w-4 text-red-600" />
@@ -802,7 +808,10 @@ function MasterSoloAdminPage() {
                             </button>
 
                             <button
-                              onClick={() => handleClearBtcAccount(u)}
+                              onClick={() => {
+                                handleClearBtcAccount(u);
+                                setActiveMenuUserId(null);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50"
                             >
                               <DollarSign className="h-4 w-4 text-amber-600" />
@@ -810,7 +819,10 @@ function MasterSoloAdminPage() {
                             </button>
 
                             <button
-                              onClick={() => openEditModal(u)}
+                              onClick={() => {
+                                openEditModal(u);
+                                setActiveMenuUserId(null);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50"
                             >
                               <Edit3 className="h-4 w-4 text-blue-600" />
@@ -822,6 +834,7 @@ function MasterSoloAdminPage() {
                                 setEmailUser(u);
                                 setEmailSubject("Important Institutional Account Notice");
                                 setEmailBody(`Hello ${u.fullName},\n\nWe are writing to provide an institutional update on your Stronghold Vault Trust account.\n\nBest regards,\nMaster Administration`);
+                                setActiveMenuUserId(null);
                               }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100"
                             >
@@ -832,7 +845,10 @@ function MasterSoloAdminPage() {
                             <div className="border-t border-gray-100 my-1" />
 
                             <button
-                              onClick={() => handleLoginAsUser(u)}
+                              onClick={() => {
+                                handleLoginAsUser(u);
+                                setActiveMenuUserId(null);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
                             >
                               <UserCheck className="h-4 w-4 text-emerald-600" />
@@ -840,7 +856,10 @@ function MasterSoloAdminPage() {
                             </button>
 
                             <button
-                              onClick={() => setLoginActivityUser(u)}
+                              onClick={() => {
+                                setLoginActivityUser(u);
+                                setActiveMenuUserId(null);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100"
                             >
                               <FileText className="h-4 w-4 text-gray-500" />
@@ -851,6 +870,7 @@ function MasterSoloAdminPage() {
                               onClick={() => {
                                 setGenerateTxUser(u);
                                 setGenTxDescription(`Administrative Credit Adjustment for ${u.fullName}`);
+                                setActiveMenuUserId(null);
                               }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"
                             >
@@ -859,7 +879,10 @@ function MasterSoloAdminPage() {
                             </button>
 
                             <button
-                              onClick={() => handleBlockUser(u)}
+                              onClick={() => {
+                                handleBlockUser(u);
+                                setActiveMenuUserId(null);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50"
                             >
                               <Ban className="h-4 w-4 text-amber-600" />
@@ -867,7 +890,10 @@ function MasterSoloAdminPage() {
                             </button>
 
                             <button
-                              onClick={() => handleDeleteUser(u)}
+                              onClick={() => {
+                                handleDeleteUser(u);
+                                setActiveMenuUserId(null);
+                              }}
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
                             >
                               <Trash2 className="h-4 w-4 text-red-600" />
