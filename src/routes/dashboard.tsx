@@ -23,6 +23,7 @@ import { meta } from "@/components/site";
 import { getCurrentSession, setCurrentSession, addTransaction, type BankUser } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/dashboard")({
+  staticData: { sitemap: "exclude-subtree" },
   head: () =>
     meta(
       "Customer Account Portal & Online Banking — Stronghold Vault Trust",

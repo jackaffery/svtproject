@@ -3,6 +3,7 @@ import { meta, PageHero, Section } from "@/components/site";
 import { services } from "@/lib/services";
 
 export const Route = createFileRoute("/services")({
+  staticData: { sitemap: true },
   head: () => meta("Services — Stronghold Vault Trust", "Savings, checking, business services, planning resources, statements and secure support."),
   component: () => (
     <>

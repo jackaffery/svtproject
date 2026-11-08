@@ -5,6 +5,7 @@ import { meta, PageHero, Section } from "@/components/site";
 import { verifyUserEmail, type BankUser } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/verify-email")({
+  staticData: { sitemap: false },
   head: () =>
     meta(
       "Verify Email — Stronghold Vault Trust Institution",

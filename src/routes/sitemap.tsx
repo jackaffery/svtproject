@@ -3,6 +3,7 @@ import { Map, ArrowRight } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
 
 export const Route = createFileRoute("/sitemap")({
+  staticData: { sitemap: true },
   head: () => meta("Sitemap — Stronghold Vault Trust Institution", "Overview of pages and portals on Stronghold Vault Trust Institution."),
   component: SitemapPage,
 });

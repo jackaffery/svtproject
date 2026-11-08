@@ -39,6 +39,7 @@ import {
 } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/transfer")({
+  staticData: { sitemap: "exclude-subtree" },
   head: () =>
     meta(
       "Money Transfer & Wire Operations — Stronghold Vault Trust",

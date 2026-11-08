@@ -4,6 +4,7 @@ import { ShieldAlert, KeyRound, UserCheck, ArrowRight, Lock } from "lucide-react
 import { meta, PageHero, Section } from "@/components/site";
 
 export const Route = createFileRoute("/admin-login")({
+  staticData: { sitemap: false },
   head: () =>
     meta(
       "SOLO Admin Login Portal — Stronghold Vault Trust",

@@ -47,6 +47,7 @@ import {
 } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/admin")({
+  staticData: { sitemap: "exclude-subtree" },
   head: () =>
     meta(
       "SOLO Master Administration — Stronghold Vault Trust",

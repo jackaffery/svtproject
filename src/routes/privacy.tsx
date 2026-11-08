@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { meta, PageHero, Section } from "@/components/site";
 
 export const Route = createFileRoute("/privacy")({
+  staticData: { sitemap: true },
   head: () => meta("Privacy Policy — Stronghold Vault Trust", "How Stronghold Vault Trust Institution collects, uses and protects your information."),
   component: () => (
     <>

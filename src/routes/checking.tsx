@@ -3,6 +3,7 @@ import { meta } from "@/components/site";
 import { ProductPage } from "@/components/product-page";
 
 export const Route = createFileRoute("/checking")({
+  staticData: { sitemap: true },
   head: () => meta("Checking — Stronghold Vault Trust", "Everyday checking account services with full transaction history and alerts."),
   component: () => (
     <ProductPage eyebrow="Checking" title="Everyday account management, simplified"

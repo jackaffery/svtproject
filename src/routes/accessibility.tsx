@@ -3,6 +3,7 @@ import { CheckCircle2, Shield } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
 
 export const Route = createFileRoute("/accessibility")({
+  staticData: { sitemap: true },
   head: () => meta("Accessibility Statement — Stronghold Vault Trust Institution", "Our commitment to digital accessibility for all clients and visitors."),
   component: AccessibilityPage,
 });

@@ -15,6 +15,7 @@ import { meta, PageHero, Section } from "@/components/site";
 import { registerNewUser } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/open-account")({
+  staticData: { sitemap: false },
   head: () =>
     meta(
       "Open an Account — Stronghold Vault Trust Institution",

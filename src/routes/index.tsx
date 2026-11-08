@@ -10,6 +10,7 @@ import { countryNames, mapLabels, mapMarkers, TRADE_PARTNERS } from "@/lib/world
 const tradePartners = TRADE_PARTNERS;
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => meta("Stronghold Vault Trust Institution — Financial Confidence", "Modern financial services built around accessibility, transparency and customer convenience."),
   component: Index,
 });
