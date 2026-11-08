@@ -808,3 +808,142 @@ export const adminUpdateWebsiteContent = createServerFn({ method: "POST" })
     await audit(ctx, "website_content_update", "website_content", data.key, data.reason || "Content update");
     return { ok: true };
   });
+
+// ---------- cards & digital assets ----------
+
+export type CardDTO = {
+  id: string;
+  userId: string;
+  type: string;
+  cardNumber: string;
+  expiryDate: string;
+  cardholderName: string;
+  dailySpendingLimit: number;
+  dailyAtmLimit: number;
+  status: string;
+};
+
+export type DigitalAssetDTO = {
+  id: string;
+  userId: string;
+  symbol: string;
+  name: string;
+  balance: number;
+  fiatValueUsd: number;
+  custodyAddress: string;
+  status: string;
+  lastAudit: string;
+};
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function mapCard(r: any): CardDTO {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    type: r.type,
+    cardNumber: r.card_number ?? "",
+    expiryDate: r.expiry_date ?? "",
+    cardholderName: r.cardholder_name ?? "",
+    dailySpendingLimit: Number(r.daily_spending_limit ?? 0),
+    dailyAtmLimit: Number(r.daily_atm_limit ?? 0),
+    status: r.status ?? "active",
+  };
+}
+
+function mapDigitalAsset(r: any): DigitalAssetDTO {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    symbol: r.symbol,
+    name: r.name ?? "",
+    balance: Number(r.balance ?? 0),
+    fiatValueUsd: Number(r.fiat_value_usd ?? 0),
+    custodyAddress: r.custody_address ?? "",
+    status: r.status ?? "secured",
+    lastAudit: r.last_audit ?? "",
+  };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+export const getMyCards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as unknown as AuthedContext;
+    let { data, error } = await ctx.supabase
+      .from("cards")
+      .select("*")
+      .eq("user_id", ctx.userId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) {
+      // Issue a default debit card for new customers.
+      const { data: profile } = await ctx.supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", ctx.userId)
+        .single();
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const last4 = String(Math.floor(1000 + Math.random() * 9000));
+      const { error: insErr } = await supabaseAdmin.from("cards").insert({
+        user_id: ctx.userId,
+        type: "debit",
+        card_number: `•••• •••• •••• ${last4}`,
+        expiry_date: "12/29",
+        cardholder_name: (profile?.full_name ?? "SVT CUSTOMER").toUpperCase(),
+        daily_spending_limit: 2500,
+        daily_atm_limit: 1000,
+        status: "active",
+      });
+      if (insErr) throw new Error(insErr.message);
+      const retry = await ctx.supabase.from("cards").select("*").eq("user_id", ctx.userId);
+      data = retry.data ?? [];
+    }
+    return (data ?? []).map(mapCard);
+  });
+
+export const updateMyCard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { cardId: string; dailySpendingLimit?: number; dailyAtmLimit?: number; status?: string }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as AuthedContext;
+    const updates: Record<string, unknown> = {};
+    if (data.dailySpendingLimit !== undefined) {
+      if (!Number.isFinite(data.dailySpendingLimit) || data.dailySpendingLimit < 100)
+        throw new Error("Daily spending limit must be at least $100");
+      updates.daily_spending_limit = data.dailySpendingLimit;
+    }
+    if (data.dailyAtmLimit !== undefined) {
+      if (!Number.isFinite(data.dailyAtmLimit) || data.dailyAtmLimit < 100)
+        throw new Error("Daily ATM limit must be at least $100");
+      updates.daily_atm_limit = data.dailyAtmLimit;
+    }
+    if (data.status !== undefined) {
+      if (!["active", "frozen"].includes(data.status)) throw new Error("Invalid card status");
+      updates.status = data.status;
+    }
+    const { data: row, error } = await ctx.supabase
+      .from("cards")
+      .update(updates)
+      .eq("id", data.cardId)
+      .eq("user_id", ctx.userId)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    await logActivity(ctx, ctx.userId, "card_update", `Card settings updated`, undefined, updates);
+    return mapCard(row);
+  });
+
+export const getMyDigitalAssets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as unknown as AuthedContext;
+    const { data, error } = await ctx.supabase
+      .from("digital_assets")
+      .select("*")
+      .eq("user_id", ctx.userId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapDigitalAsset);
+  });
