@@ -28,3 +28,5 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- Derive the XML sitemap from required route-level `staticData.sitemap` decisions; exclude account/auth/admin surfaces so new public pages track the router without exposing private destinations.
