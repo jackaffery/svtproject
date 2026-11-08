@@ -36,7 +36,7 @@ function Index() {
             <Link to="/services" className="rounded-md border border-primary-foreground/60 px-6 py-4 font-semibold text-primary-foreground hover:bg-primary-foreground/10">
               Explore Our Services
             </Link>
-            <Link to="/login" className="px-2 font-bold text-gold underline-offset-4 hover:underline hover:text-gold-deep transition-colors">
+            <Link to="/login" className="rounded-md border border-gold/40 bg-gold/15 px-6 py-4 font-bold text-gold transition-colors hover:bg-gold/25 hover:border-gold">
               Customer Login
             </Link>
             <Link to="/admin-login" className="rounded-md border border-gold/40 bg-gold/15 px-3 py-2 text-xs font-bold text-gold hover:bg-gold/25">
