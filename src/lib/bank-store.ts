@@ -276,22 +276,22 @@ const INITIAL_DEMO_USER: BankUser = {
 };
 
 export function getBankUsers(): BankUser[] {
-  if (typeof window === "undefined") return [INITIAL_DEMO_USER];
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([INITIAL_DEMO_USER]));
-      return [INITIAL_DEMO_USER];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      return [];
     }
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([INITIAL_DEMO_USER]));
-      return [INITIAL_DEMO_USER];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      return [];
     }
-    // Return the actual array even if empty so deleted users stay deleted
+    // Return the actual array (only users registered and recorded in admin)
     return parsed;
   } catch {
-    return [INITIAL_DEMO_USER];
+    return [];
   }
 }
 
@@ -890,15 +890,16 @@ export function deleteBankUser(userId: string): void {
 
 // Session Helpers
 export function getCurrentSession(): BankUser | null {
-  if (typeof window === "undefined") return INITIAL_DEMO_USER;
+  if (typeof window === "undefined") return null;
   try {
     const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
-    if (!raw) return INITIAL_DEMO_USER;
+    if (!raw) return null;
     const parsed = JSON.parse(raw);
     const latest = getBankUsers().find((u) => u.id === parsed.id);
-    return latest || parsed;
+    // Only return session if the user exists in the admin ledger/records
+    return latest || null;
   } catch {
-    return INITIAL_DEMO_USER;
+    return null;
   }
 }
 

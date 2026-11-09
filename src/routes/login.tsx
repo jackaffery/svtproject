@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Lock, Mail, KeyRound, ArrowRight } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
 import { supabase } from "@/integrations/supabase/client";
+import { findUserByEmail, setCurrentSession } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/login")({
   staticData: { sitemap: false },
@@ -53,6 +54,12 @@ function LoginPage() {
       setBusy(false);
       setError("This account is currently under administrative review. Please contact support.");
       return;
+    }
+
+    // Ensure session is synchronized only for users properly recorded in admin
+    const recordedUser = findUserByEmail(email.trim());
+    if (recordedUser) {
+      setCurrentSession(recordedUser);
     }
 
     navigate({ to: "/dashboard" });
