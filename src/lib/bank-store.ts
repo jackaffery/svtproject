@@ -122,8 +122,8 @@ export interface BankUser {
   loginActivity?: { timestamp: string; ip: string; device: string; location: string }[];
 }
 
-const STORAGE_KEY = "svt_bank_users_v3";
-const SESSION_KEY = "svt_current_session_v3";
+const STORAGE_KEY = "svt_bank_users_v4";
+const SESSION_KEY = "svt_current_session_v4";
 
 const INITIAL_BENEFICIARIES: Beneficiary[] = [
   {
@@ -150,139 +150,7 @@ const INITIAL_BENEFICIARIES: Beneficiary[] = [
   },
 ];
 
-const INITIAL_DEMO_USER: BankUser = {
-  id: "usr_svt_234662",
-  fullName: "jack ray affery",
-  username: "jackaffery2024",
-  email: "jackaffery2024@gmail.com",
-  phone: "+1 2024692219",
-  avatarUrl: "",
-  accountNumber: "45643224892",
-  savingsAccountNumber: "45643227810",
-  routingNumber: "021000021",
-  accountType: "Advantage Checking",
-  pin: "2026",
-  loginPassword: "password123",
-  balance: 4564322.00,
-  savingsBalance: 0.00,
-  status: "active",
-  applicationStatus: "approved",
-  idType: "Driver's License / State ID",
-  idNumber: "89764543556",
-  verifiedAt: "2026-11-01T10:00:00Z",
-  createdAt: "2026-11-01T09:30:00Z",
-  address: "1600 Pennsylvania Ave NW",
-  city: "Washington",
-  state: "D.C.",
-  country: "United States",
-  monthlyDepositLimit: 10000000,
-  btcBalance: 0.00,
-  beneficiaries: INITIAL_BENEFICIARIES,
-  cards: [
-    {
-      id: "crd_01",
-      type: "debit",
-      cardholderName: "JACK RAY AFFERY",
-      cardNumber: "4532 •••• •••• 8841",
-      expiryDate: "09/29",
-      cvv: "392",
-      pin: "2026",
-      status: "active",
-      dailySpendingLimit: 15000,
-      dailyAtmLimit: 5000,
-      currentDailySpend: 0,
-      billingAddress: "1600 Pennsylvania Ave NW, Washington, D.C.",
-      issuedDate: "2026-11-01",
-    },
-    {
-      id: "crd_02",
-      type: "credit",
-      cardholderName: "JACK RAY AFFERY",
-      cardNumber: "5421 •••• •••• 4209",
-      expiryDate: "11/30",
-      cvv: "812",
-      pin: "2026",
-      status: "active",
-      dailySpendingLimit: 50000,
-      dailyAtmLimit: 10000,
-      currentDailySpend: 1250,
-      billingAddress: "1600 Pennsylvania Ave NW, Washington, D.C.",
-      issuedDate: "2026-11-02",
-    },
-  ],
-  digitalAssets: [
-    {
-      symbol: "BTC",
-      name: "Bitcoin Vault Custody",
-      balance: 1.4852,
-      fiatValueUsd: 138420.50,
-      custodyVaultAddress: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-      status: "active",
-      lastAuditTimestamp: "2026-11-07 08:30:00 UTC",
-    },
-    {
-      symbol: "ETH",
-      name: "Ethereum Smart Reserve",
-      balance: 12.85,
-      fiatValueUsd: 41250.00,
-      custodyVaultAddress: "0x71C...B29F4a09",
-      status: "active",
-      lastAuditTimestamp: "2026-11-07 08:30:00 UTC",
-    },
-  ],
-  irsRefunds: [
-    {
-      id: "irs_2026_01",
-      ssnLast4: "4355",
-      taxYear: "2025/2026",
-      refundAmount: 8450.00,
-      filingStatus: "Single",
-      depositStatus: "deposited",
-      treasuryTraceNumber: "US-IRS-TREAS-89410294",
-      submissionDate: "2026-03-15",
-      depositDate: "2026-04-02",
-      notes: "Direct Treasury Deposit to Advantage Checking #45643224892",
-    },
-    {
-      id: "irs_2026_02",
-      ssnLast4: "4355",
-      taxYear: "2026 Mid-Year Adjustment",
-      refundAmount: 3200.00,
-      filingStatus: "Single",
-      depositStatus: "pending_review",
-      treasuryTraceNumber: "US-IRS-TREAS-99214482",
-      submissionDate: "2026-10-18",
-      notes: "IRS 1040-ES Treasury verification in progress by Solo Admin.",
-    },
-  ],
-  loginActivity: [
-    { timestamp: "2026-11-07 10:14 AM", ip: "192.168.1.42", device: "Chrome 130 / Windows 11", location: "Washington, D.C." },
-    { timestamp: "2026-11-06 08:30 PM", ip: "192.168.1.42", device: "Chrome 130 / Windows 11", location: "Washington, D.C." },
-  ],
-  transactions: [
-    {
-      id: "tx_01",
-      type: "deposit",
-      transferCategory: "domestic",
-      description: "Direct Federal Wire Deposit — Escrow Settlement",
-      amount: 4564322.00,
-      fee: 0,
-      totalDeduction: 0,
-      currency: "USD",
-      senderName: "Federal Reserve Settlement Services",
-      senderAccount: "FED-00921448",
-      recipientName: "jack ray affery",
-      recipientAccount: "45643224892",
-      recipientBank: "Stronghold Vault Trust Institution",
-      date: "2026-11-05",
-      status: "completed",
-      reference: "SVT-US-234662",
-      auditTrail: [
-        { timestamp: "2026-11-05 09:12:00 UTC", action: "Settled via Fedwire", performedBy: "SYSTEM_CORE" },
-      ],
-    },
-  ],
-};
+const INITIAL_DEMO_USER: BankUser | null = null;
 
 export function getBankUsers(): BankUser[] {
   if (typeof window === "undefined") return [];
