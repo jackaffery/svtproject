@@ -10,9 +10,11 @@ import {
   CheckCircle,
   Inbox,
   RefreshCw,
+  Lock,
 } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
 import { supabase } from "@/integrations/supabase/client";
+import { registerNewUser } from "@/lib/bank-store";
 
 export const Route = createFileRoute("/open-account")({
   staticData: { sitemap: false },
@@ -30,6 +32,8 @@ function OpenAccountPage() {
     email: "",
     phone: "",
     accountType: "Personal Checking" as "Personal Checking" | "High-Yield Savings" | "Private Wealth Trust",
+    pin: "",
+    confirmPin: "",
     password: "",
     confirmPassword: "",
     address: "",
@@ -52,6 +56,16 @@ function OpenAccountPage() {
       return;
     }
 
+    if (!/^\d{4}$/.test(formData.pin)) {
+      setError("Security PIN must be exactly 4 digits.");
+      return;
+    }
+
+    if (formData.pin !== formData.confirmPin) {
+      setError("Security PIN confirmation does not match.");
+      return;
+    }
+
     if (formData.password.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
@@ -63,6 +77,24 @@ function OpenAccountPage() {
     }
 
     setBusy(true);
+
+    // Synchronize to bank-store as a brand new fresh account with zero funds and zero history
+    try {
+      registerNewUser({
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        accountType: formData.accountType,
+        pin: formData.pin,
+        address: formData.address,
+        city: formData.city || "New York",
+        country: formData.country,
+        initialDeposit: 0,
+      });
+    } catch {
+      // Continue
+    }
+
     const { error: signUpError } = await supabase.auth.signUp({
       email: formData.email.trim(),
       password: formData.password,
@@ -73,6 +105,7 @@ function OpenAccountPage() {
           phone: formData.phone,
           address: `${formData.address}, ${formData.city}, ${formData.country}`,
           account_type: formData.accountType,
+          pin: formData.pin,
         },
       },
     });
@@ -265,6 +298,45 @@ function OpenAccountPage() {
                 <div className="rounded-xl border border-gold/30 bg-gold/5 p-4">
                   <div className="flex items-center gap-2">
                     <KeyRound className="h-4 w-4 text-gold-ink" />
+                    <span className="text-xs font-bold tracking-wide uppercase text-primary">
+                      4-Digit Security Transfer PIN
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Set a confidential 4-digit PIN required to authorize wire transfers and sensitive account transactions.
+                  </p>
+
+                  <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="text-xs font-semibold text-foreground">Enter 4-Digit PIN</label>
+                      <input
+                        type="password"
+                        maxLength={4}
+                        required
+                        placeholder="••••"
+                        value={formData.pin}
+                        onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, "") })}
+                        className="mt-1 w-full tracking-[0.4em] rounded-md border bg-background px-3 py-2 text-center text-base font-bold focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-foreground">Confirm 4-Digit PIN</label>
+                      <input
+                        type="password"
+                        maxLength={4}
+                        required
+                        placeholder="••••"
+                        value={formData.confirmPin}
+                        onChange={(e) => setFormData({ ...formData, confirmPin: e.target.value.replace(/\D/g, "") })}
+                        className="mt-1 w-full tracking-[0.4em] rounded-md border bg-background px-3 py-2 text-center text-base font-bold focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-gold/30 bg-gold/5 p-4">
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-4 w-4 text-gold-ink" />
                     <span className="text-xs font-bold tracking-wide uppercase text-primary">
                       Account Password
                     </span>
