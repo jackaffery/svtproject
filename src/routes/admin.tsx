@@ -38,6 +38,8 @@ import {
   getBankUsers,
   updateUserStatus,
   updateUserApplicationStatus,
+  updateUserKycStatus,
+  addAdminNoteToUser,
   updateUserBalance,
   updateUserDetails,
   deleteBankUser,
@@ -77,8 +79,11 @@ function MasterSoloAdminPage() {
 
   // Active Spot Section in Admin (matching sidebar items from screenshot)
   const [activeAdminSection, setActiveAdminSection] = useState<
-    "users" | "history" | "deposits" | "loans" | "cards" | "irs" | "email" | "administrators" | "settings" | "cms" | "activity"
+    "users" | "applications" | "kyc" | "history" | "deposits" | "loans" | "cards" | "irs" | "email" | "administrators" | "settings" | "cms" | "activity"
   >("users");
+
+  // Admin notes input
+  const [adminNoteInput, setAdminNoteInput] = useState("");
 
   // Centralized System Activity Monitoring & Notifications
   const [activities, setActivities] = useState<SystemActivityLog[]>([]);
@@ -398,9 +403,50 @@ function MasterSoloAdminPage() {
           >
             <div className="flex items-center gap-3">
               <Users className="h-4 w-4 text-red-600" />
-              <span>Manage Users</span>
+              <span>Customer Records</span>
             </div>
             <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "users" ? "rotate-90" : ""}`} />
+          </button>
+
+          {/* Customer Applications */}
+          <button
+            onClick={() => {
+              setActiveAdminSection("applications");
+              setIsMobileMenuOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 font-bold transition-colors ${
+              activeAdminSection === "applications" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <FileText className="h-4 w-4 text-blue-600" />
+              <span>Customer Applications</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {pendingCount > 0 && (
+                <span className="rounded-full bg-amber-500 text-white font-extrabold text-[10px] px-1.5 py-0.2">
+                  {pendingCount}
+                </span>
+              )}
+              <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "applications" ? "rotate-90" : ""}`} />
+            </div>
+          </button>
+
+          {/* KYC Verification */}
+          <button
+            onClick={() => {
+              setActiveAdminSection("kyc");
+              setIsMobileMenuOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 font-bold transition-colors ${
+              activeAdminSection === "kyc" ? "text-[#0a1b33] bg-gray-100" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              <span>KYC Verification</span>
+            </div>
+            <ChevronRight className={`h-3 w-3 text-gray-400 transition-transform ${activeAdminSection === "kyc" ? "rotate-90" : ""}`} />
           </button>
 
           {/* Wire & Transfer Operations */}
@@ -1048,6 +1094,232 @@ function MasterSoloAdminPage() {
             </div>
           </div>
             </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* CUSTOMER APPLICATIONS MANAGEMENT SECTION */}
+        {/* ============================================================== */}
+        {activeAdminSection === "applications" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="font-display text-2xl font-bold text-[#0a1b33]">Customer Applications</h1>
+                  <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-extrabold text-blue-800">
+                    {totalApplications} Records
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Review applicant profiles, check enrollment details, add internal notes, and make authorization decisions.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={loadData}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-blue-600" />
+                  <span>Refresh Applications</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Filter Status Badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              {(["All", "Pending", "Under Review", "Approved", "Declined"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setFilterTab(tab)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                    filterTab === tab
+                      ? "bg-[#0a1b33] text-white shadow-xs"
+                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Applications List */}
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden">
+              {filteredUsers.length === 0 ? (
+                <div className="p-12 text-center text-xs text-gray-400">
+                  No applications match the selected criteria.
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {filteredUsers.map((u) => (
+                    <div key={u.id} className="p-5 hover:bg-gray-50 transition-colors">
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-bold text-sm text-[#0a1b33]">{u.fullName}</span>
+                            <span className="font-mono text-xs text-gray-500">Ref: SVT-US-{u.accountNumber.slice(-6)}</span>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                                u.applicationStatus === "approved" || u.status === "active"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : u.applicationStatus === "declined"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              Status: {(u.applicationStatus || u.status).toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {u.email} • {u.phone} • Applied from {u.city}, {u.country}
+                          </p>
+                          <p className="text-xs text-gray-600 font-medium">
+                            Account Tier: <span className="font-bold text-gray-800">{u.accountType}</span> • ID: {u.idType || "Driver's License / State ID"} ({u.idNumber || "Verified"})
+                          </p>
+
+                          {/* Existing Admin Notes */}
+                          {u.adminNotes && u.adminNotes.length > 0 && (
+                            <div className="mt-2 space-y-1 bg-amber-50/60 p-2.5 rounded-lg border border-amber-200/50">
+                              <span className="text-[10px] font-bold uppercase text-amber-900 tracking-wider">Internal Administrative Notes:</span>
+                              {u.adminNotes.map((n) => (
+                                <p key={n.id} className="text-xs text-gray-700 italic">
+                                  "{n.note}" <span className="text-[10px] text-gray-400 font-mono">— {n.author} ({new Date(n.createdAt).toLocaleDateString()})</span>
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => {
+                              updateUserApplicationStatus(u.id, "approved");
+                              loadData();
+                              showToast(`Application for ${u.fullName} approved.`);
+                            }}
+                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => {
+                              updateUserApplicationStatus(u.id, "declined");
+                              loadData();
+                              showToast(`Application for ${u.fullName} declined.`);
+                            }}
+                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100"
+                          >
+                            Decline
+                          </button>
+                          <button
+                            onClick={() => setViewDetailsUser(u)}
+                            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
+                          >
+                            Inspect Profile
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* KYC VERIFICATION MANAGEMENT SECTION */}
+        {/* ============================================================== */}
+        {activeAdminSection === "kyc" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="font-display text-2xl font-bold text-[#0a1b33]">KYC Identity & Document Verification</h1>
+                <p className="mt-1 text-xs text-gray-500">
+                  Inspect submitted government credentials, review uploaded identity files, and issue regulatory decisions.
+                </p>
+              </div>
+              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 font-mono text-xs font-bold text-emerald-800">
+                {users.filter((u) => u.kycStatus === "approved").length} Verified / {users.length} Total
+              </span>
+            </div>
+
+            <div className="grid gap-4">
+              {users.map((u) => (
+                <div key={u.id} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-base text-[#0a1b33]">{u.fullName}</h3>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                            u.kycStatus === "approved"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : u.kycStatus === "declined"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          KYC: {(u.kycStatus || "PENDING").toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {u.email} • Account #{u.accountNumber} • {u.country}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          updateUserKycStatus(u.id, "approved");
+                          loadData();
+                          showToast(`KYC for ${u.fullName} approved.`);
+                        }}
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs"
+                      >
+                        Approve KYC
+                      </button>
+                      <button
+                        onClick={() => {
+                          const reason = prompt("Enter KYC decline reason:", "Document expired or unreadable");
+                          if (reason !== null) {
+                            updateUserKycStatus(u.id, "declined", reason);
+                            loadData();
+                            showToast(`KYC for ${u.fullName} declined.`);
+                          }
+                        }}
+                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 shadow-xs"
+                      >
+                        Decline KYC
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 text-xs">
+                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                      <span className="font-bold uppercase text-gray-400 text-[10px] tracking-wider">Government ID Details</span>
+                      <p className="mt-1 font-semibold text-gray-800">{u.idType || "Driver's License / State ID"}</p>
+                      <p className="font-mono text-gray-600 mt-0.5">Document Number: {u.idNumber || "89764543556"}</p>
+                      <p className="text-gray-500 mt-1">Address: {u.address}, {u.city}, {u.country}</p>
+                    </div>
+
+                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                      <span className="font-bold uppercase text-gray-400 text-[10px] tracking-wider">Verification History</span>
+                      <p className="mt-1 text-gray-700">Submitted: {new Date(u.createdAt).toLocaleString()}</p>
+                      {u.kycReviewedAt && (
+                        <p className="text-gray-700 mt-0.5">
+                          Reviewed: {new Date(u.kycReviewedAt).toLocaleString()} by {u.kycReviewedBy || "Solo Admin"}
+                        </p>
+                      )}
+                      {u.kycDeclineReason && (
+                        <p className="text-red-700 font-semibold mt-1">Reason: {u.kycDeclineReason}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* ============================================================== */}
@@ -2063,6 +2335,49 @@ function MasterSoloAdminPage() {
               ) : (
                 <p className="text-gray-400 text-xs italic">No physical/virtual cards provisioned yet.</p>
               )}
+            </div>
+
+            {/* Internal Administrative Notes section */}
+            <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-amber-900 mb-2">Administrative Notes & Audit Records</h4>
+              {viewDetailsUser.adminNotes && viewDetailsUser.adminNotes.length > 0 ? (
+                <div className="space-y-1.5 mb-3">
+                  {viewDetailsUser.adminNotes.map((note) => (
+                    <div key={note.id} className="p-2 rounded bg-white border border-amber-200/60 text-xs">
+                      <p className="text-gray-800">{note.note}</p>
+                      <span className="text-[10px] text-gray-400 font-mono">By {note.author} on {new Date(note.createdAt).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-xs italic mb-3">No administrative notes recorded for this applicant.</p>
+              )}
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add internal administrative note..."
+                  value={adminNoteInput}
+                  onChange={(e) => setAdminNoteInput(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-gray-300 bg-white px-3 py-1.5 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (adminNoteInput.trim() && viewDetailsUser) {
+                      addAdminNoteToUser(viewDetailsUser.id, adminNoteInput.trim());
+                      setAdminNoteInput("");
+                      loadData();
+                      const updated = getBankUsers().find((u) => u.id === viewDetailsUser.id);
+                      if (updated) setViewDetailsUser(updated);
+                      showToast("Note recorded.");
+                    }
+                  }}
+                  className="rounded-lg bg-[#0a1b33] text-white px-3 py-1.5 text-xs font-bold hover:bg-[#122b52] shrink-0"
+                >
+                  Save Note
+                </button>
+              </div>
             </div>
 
             <div className="flex justify-between items-center pt-3 border-t">

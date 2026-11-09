@@ -95,6 +95,13 @@ export interface BankUser {
   applicationStatus?: "pending" | "under_review" | "approved" | "declined" | undefined;
   idType?: string | undefined;
   idNumber?: string | undefined;
+  kycStatus?: "pending" | "under_review" | "approved" | "declined" | undefined;
+  kycSubmittedAt?: string | undefined;
+  kycReviewedAt?: string | undefined;
+  kycReviewedBy?: string | undefined;
+  kycDeclineReason?: string | undefined;
+  kycDocuments?: { name: string; url?: string; type: string; uploadedAt: string }[] | undefined;
+  adminNotes?: { id: string; note: string; author: string; createdAt: string }[] | undefined;
   verificationToken?: string | undefined;
   verificationLink?: string | undefined;
   verifiedAt?: string | undefined;
@@ -354,6 +361,16 @@ export function registerNewUser(data: {
     applicationStatus: "pending",
     idType: data.idType || "Driver's License / State ID",
     idNumber: data.idNumber || "DL-" + Math.floor(10000000 + Math.random() * 90000000),
+    kycStatus: "pending",
+    kycSubmittedAt: new Date().toISOString(),
+    kycDocuments: [
+      {
+        name: "Government ID / Passport",
+        type: data.idType || "Driver's License / State ID",
+        uploadedAt: new Date().toISOString(),
+      },
+    ],
+    adminNotes: [],
     verificationToken: token,
     verificationLink,
     createdAt: new Date().toISOString(),
@@ -492,8 +509,62 @@ export function updateUserApplicationStatus(
       user.status = "suspended";
     }
     saveBankUsers(users);
+
+    addSystemActivity({
+      category: "application",
+      title: `Application ${applicationStatus.toUpperCase()}`,
+      description: `Account application for ${user.fullName} updated to ${applicationStatus} by Solo Admin.`,
+      userId: user.id,
+      userName: user.fullName,
+      severity: applicationStatus === "approved" ? "success" : applicationStatus === "declined" ? "danger" : "info",
+    });
+
     const curr = getCurrentSession();
     if (curr && curr.id === userId) setCurrentSession(user);
+  }
+}
+
+export function updateUserKycStatus(
+  userId: string,
+  kycStatus: "pending" | "under_review" | "approved" | "declined",
+  reason?: string
+): void {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (user) {
+    user.kycStatus = kycStatus;
+    user.kycReviewedAt = new Date().toISOString();
+    user.kycReviewedBy = "Solo Admin";
+    if (reason) user.kycDeclineReason = reason;
+
+    saveBankUsers(users);
+
+    addSystemActivity({
+      category: "compliance",
+      title: `KYC ${kycStatus.toUpperCase()}`,
+      description: `Customer ${user.fullName} KYC status changed to ${kycStatus}${reason ? `: ${reason}` : ""}.`,
+      userId: user.id,
+      userName: user.fullName,
+      severity: kycStatus === "approved" ? "success" : kycStatus === "declined" ? "danger" : "warning",
+    });
+
+    const curr = getCurrentSession();
+    if (curr && curr.id === userId) setCurrentSession(user);
+  }
+}
+
+export function addAdminNoteToUser(userId: string, note: string): void {
+  const users = getBankUsers();
+  const user = users.find((u) => u.id === userId);
+  if (user) {
+    if (!user.adminNotes) user.adminNotes = [];
+    user.adminNotes.push({
+      id: "note_" + Date.now(),
+      note,
+      author: "Solo Admin",
+      createdAt: new Date().toISOString(),
+    });
+    saveBankUsers(users);
   }
 }
 
