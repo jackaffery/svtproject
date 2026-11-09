@@ -125,6 +125,8 @@ function MasterSoloAdminPage() {
 
   // Modal states
   const [editingUser, setEditingUser] = useState<BankUser | null>(null);
+  const [viewDetailsUser, setViewDetailsUser] = useState<BankUser | null>(null);
+  const [userToDelete, setUserToDelete] = useState<BankUser | null>(null);
   const [editBalanceInput, setEditBalanceInput] = useState("");
   const [editFullName, setEditFullName] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -238,11 +240,23 @@ function MasterSoloAdminPage() {
   };
 
   const handleDeleteUser = (u: BankUser) => {
-    if (confirm(`Permanently delete client ${u.fullName}?`)) {
-      deleteBankUser(u.id);
-      loadData();
-      showToast(`Deleted ${u.fullName} from institution records`);
-    }
+    setUserToDelete(u);
+  };
+
+  const confirmDeleteUser = () => {
+    if (!userToDelete) return;
+    deleteBankUser(userToDelete.id);
+    addSystemActivity({
+      category: "account",
+      title: "Customer Deleted",
+      description: `Client account ${userToDelete.fullName} (${userToDelete.accountNumber}) was permanently purged by Master Solo Admin.`,
+      userId: userToDelete.id,
+      userName: userToDelete.fullName,
+      severity: "critical",
+    });
+    loadData();
+    showToast(`Customer ${userToDelete.fullName} permanently deleted from institution records`);
+    setUserToDelete(null);
   };
 
   const handleLoginAsUser = (u: BankUser) => {
@@ -829,8 +843,12 @@ function MasterSoloAdminPage() {
                         <p className="text-[11px] text-gray-400">Today, Just now</p>
                       </td>
 
-                      <td className="py-4 px-4">
-                        <p className="font-bold text-base text-gray-900 capitalize">{u.fullName}</p>
+                      <td
+                        onClick={() => setViewDetailsUser(u)}
+                        className="py-4 px-4 cursor-pointer hover:bg-gray-100/60 transition-colors"
+                        title="Click to view full customer details"
+                      >
+                        <p className="font-bold text-base text-gray-900 capitalize hover:text-primary hover:underline">{u.fullName}</p>
                         <p className="text-gray-500">{u.email}</p>
                         <p className="text-[11px] text-gray-400">{u.phone}</p>
                       </td>
@@ -886,10 +904,10 @@ function MasterSoloAdminPage() {
                           ) : null}
 
                           <button
-                            onClick={(e) => handleActionClick(e, u.id)}
-                            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
+                            onClick={() => setViewDetailsUser(u)}
+                            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
                           >
-                            Review
+                            Details
                           </button>
 
                           <button
@@ -1943,6 +1961,179 @@ function MasterSoloAdminPage() {
                 className="rounded bg-[#0a1b33] px-5 py-2 font-bold text-white hover:bg-[#122b52]"
               >
                 Send Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Details Modal */}
+      {viewDetailsUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#0a1b33] text-gold font-bold">
+                  <User className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#0a1b33]">{viewDetailsUser.fullName}</h3>
+                  <p className="text-[11px] text-gray-500 font-mono">Account #{viewDetailsUser.accountNumber} • SVT-US-{viewDetailsUser.accountNumber.slice(-6)}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewDetailsUser(null)}
+                className="text-gray-400 hover:text-gray-700 text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500 border-b pb-1">Account & Balances</h4>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Account Type:</span>
+                  <span className="font-bold text-gray-800">{viewDetailsUser.accountType}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Checking Balance:</span>
+                  <span className="font-bold text-emerald-700">${viewDetailsUser.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Savings Balance:</span>
+                  <span className="font-bold text-emerald-700">${(viewDetailsUser.savingsBalance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Routing Number:</span>
+                  <span className="font-mono font-bold text-gray-800">{viewDetailsUser.routingNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Account Status:</span>
+                  <span className="font-bold capitalize text-emerald-600">{viewDetailsUser.status}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Application Review:</span>
+                  <span className="font-bold capitalize text-blue-600">{viewDetailsUser.applicationStatus || "approved"}</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-2">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500 border-b pb-1">Client Identity & KYC</h4>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Email Address:</span>
+                  <span className="font-mono font-bold text-gray-800">{viewDetailsUser.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Phone Number:</span>
+                  <span className="font-mono font-bold text-gray-800">{viewDetailsUser.phone}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Residential Address:</span>
+                  <span className="font-bold text-gray-800">{viewDetailsUser.address || "Washington, DC"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Country / State:</span>
+                  <span className="font-bold text-gray-800">{viewDetailsUser.country}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">ID Verification:</span>
+                  <span className="font-mono text-gray-700">{viewDetailsUser.idType || "Driver's License / State ID"} ({viewDetailsUser.idNumber || "89764543556"})</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Security Transfer PIN:</span>
+                  <span className="font-mono font-bold text-[#0a1b33]">•••• (Enforced)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500 mb-2">Registered Cards & Custodial Limits</h4>
+              {viewDetailsUser.cards && viewDetailsUser.cards.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {viewDetailsUser.cards.map((card) => (
+                    <div key={card.id} className="border border-gray-200 rounded-lg p-2.5 bg-gray-50/50">
+                      <p className="font-mono font-bold text-[#0a1b33]">{card.cardNumber}</p>
+                      <p className="text-[10px] text-gray-500 uppercase">{card.type} Card • Exp: {card.expiryDate}</p>
+                      <p className="text-[11px] font-bold text-emerald-700 mt-1">Daily Limit: ${card.dailySpendingLimit.toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-xs italic">No physical/virtual cards provisioned yet.</p>
+              )}
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  handleDeleteUser(viewDetailsUser);
+                  setViewDetailsUser(null);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-100"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete Customer Account</span>
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    openEditModal(viewDetailsUser);
+                    setViewDetailsUser(null);
+                  }}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700"
+                >
+                  Edit Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewDetailsUser(null)}
+                  className="rounded-lg bg-[#0a1b33] px-4 py-2 text-xs font-bold text-white hover:bg-[#122b52]"
+                >
+                  Close Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-red-100 text-red-600">
+              <Trash2 className="h-7 w-7" />
+            </div>
+
+            <div className="text-center">
+              <h3 className="text-base font-bold text-gray-900">Delete Customer Account?</h3>
+              <p className="mt-2 text-xs text-gray-600">
+                Are you sure you want to permanently delete <strong>{userToDelete.fullName}</strong> (Account #{userToDelete.accountNumber})?
+              </p>
+              <p className="mt-1 text-[11px] text-red-600 font-semibold">
+                This action is irreversible and purges all ledger records and access credentials.
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-3 pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                className="rounded-lg border border-gray-300 px-5 py-2 font-bold text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteUser}
+                className="rounded-lg bg-red-600 px-5 py-2 font-bold text-white hover:bg-red-700 shadow-md"
+              >
+                Confirm Delete Customer
               </button>
             </div>
           </div>
