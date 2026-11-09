@@ -873,8 +873,8 @@ function MasterSoloAdminPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-visible">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[700px]">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/80 uppercase tracking-wider text-gray-500 font-bold">
                     <th className="py-3 px-6">Ref ID & Date</th>
