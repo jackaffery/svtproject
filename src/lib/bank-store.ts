@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface Beneficiary {
   id: string;
   name: string;
@@ -299,6 +301,86 @@ export function getBankUsers(): BankUser[] {
     return parsed;
   } catch {
     return [];
+  }
+}
+
+/**
+ * Asynchronously synchronizes with backend database (profiles, accounts, activity)
+ * so registrations and actions submitted from any device or session immediately populate Admin.
+ */
+export async function syncBankUsersFromBackend(): Promise<BankUser[]> {
+  try {
+    const localUsers = getBankUsers();
+    const { data: dbProfiles, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error || !dbProfiles) return localUsers;
+
+    // Merge backend profiles into local bank ledger
+    let hasChanges = false;
+    for (const prof of dbProfiles) {
+      const existingIdx = localUsers.findIndex(
+        (u) => u.id === prof.id || (prof.account_number && u.accountNumber === prof.account_number)
+      );
+
+      const fullName = prof.full_name || "Client Applicant";
+      const email = prof.username ? `${prof.username}@svt.online` : `applicant_${prof.id.slice(0, 6)}@domain.com`;
+      const accNum = prof.account_number || `SVT${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+      if (existingIdx === -1) {
+        hasChanges = true;
+        localUsers.push({
+          id: prof.id,
+          fullName,
+          username: prof.username || prof.id.slice(0, 8),
+          email,
+          phone: prof.phone || "+1 (555) 000-0000",
+          accountNumber: accNum,
+          routingNumber: "021000021",
+          accountType: "Advantage Checking",
+          pin: "2026",
+          balance: 0,
+          savingsBalance: 0,
+          status: (prof.status as BankUser["status"]) || "pending_verification",
+          applicationStatus: prof.status === "active" ? "approved" : "pending",
+          kycStatus: "pending",
+          kycSubmittedAt: prof.created_at,
+          kycDocuments: [
+            {
+              name: "Government ID / Passport",
+              type: "Driver's License / State ID",
+              uploadedAt: prof.created_at,
+            },
+          ],
+          adminNotes: [],
+          createdAt: prof.created_at,
+          address: prof.address || "United States",
+          city: "New York",
+          country: "United States",
+          monthlyDepositLimit: 500000,
+          transactions: [],
+          beneficiaries: [],
+          cards: [],
+          digitalAssets: [],
+          irsRefunds: [],
+        });
+      } else {
+        // Sync status if changed
+        if (prof.status && localUsers[existingIdx] && localUsers[existingIdx]!.status !== prof.status) {
+          localUsers[existingIdx]!.status = prof.status as BankUser["status"];
+          hasChanges = true;
+        }
+      }
+    }
+
+    if (hasChanges) {
+      saveBankUsers(localUsers);
+    }
+    return localUsers;
+  } catch {
+    return getBankUsers();
   }
 }
 

@@ -36,6 +36,7 @@ import {
 import { meta } from "@/components/site";
 import {
   getBankUsers,
+  syncBankUsersFromBackend,
   updateUserStatus,
   updateUserApplicationStatus,
   updateUserKycStatus,
@@ -154,6 +155,10 @@ function MasterSoloAdminPage() {
     setUsers([...getBankUsers()]);
     setActivities([...getSystemActivities()]);
     setSiteConfig(getWebsiteContentConfig());
+    // Also pull and synchronize any applications or accounts created in the live database
+    syncBankUsersFromBackend().then((synced) => {
+      setUsers([...synced]);
+    }).catch(() => {});
   };
 
   useEffect(() => {
