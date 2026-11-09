@@ -951,42 +951,21 @@ export interface SystemActivityLog {
   read: boolean;
 }
 
-const ACTIVITIES_KEY = "svt_system_activities_v3";
+const ACTIVITIES_KEY = "svt_system_activities_v4";
 
-const INITIAL_ACTIVITIES: SystemActivityLog[] = [
-  {
-    id: "act_101",
-    timestamp: new Date().toISOString(),
-    category: "security",
-    title: "Master Solo Administration Session Active",
-    description: "Solo Administrator support@svt.online authenticated securely.",
-    severity: "info",
-    read: true,
-  },
-  {
-    id: "act_102",
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    category: "account",
-    title: "New Application Verified",
-    description: "Account 45643224892 approved and activated under FDIC standard.",
-    userId: "usr_svt_234662",
-    userName: "jack ray affery",
-    severity: "success",
-    read: false,
-  },
-];
+const INITIAL_ACTIVITIES: SystemActivityLog[] = [];
 
 export function getSystemActivities(): SystemActivityLog[] {
-  if (typeof window === "undefined") return INITIAL_ACTIVITIES;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(ACTIVITIES_KEY);
     if (!raw) {
-      localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(INITIAL_ACTIVITIES));
-      return INITIAL_ACTIVITIES;
+      localStorage.setItem(ACTIVITIES_KEY, JSON.stringify([]));
+      return [];
     }
     return JSON.parse(raw);
   } catch {
-    return INITIAL_ACTIVITIES;
+    return [];
   }
 }
 
