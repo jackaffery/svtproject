@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Mail } from "lucide-react";
 import { meta, PageHero, Section } from "@/components/site";
 
-const SUPPORT_EMAIL = "support@strongholdvaulttrust.com";
+const SUPPORT_EMAIL = "support@strongholdvaulttrustinstitution.online";
 
 const faqs: [string, string][] = [
   ["How long does an application review take?", "Most applications are reviewed within a few business days. You'll be notified by email."],

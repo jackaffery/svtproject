@@ -1038,7 +1038,7 @@ const DEFAULT_CONTENT_CONFIG: WebsiteContentConfig = {
   noticeBanner: "Official Notice: Scheduled Federal Reserve wire clearing window operates from 08:00 to 17:00 EST.",
   noticeBannerActive: true,
   supportPhone: "+1 (800) 842-7878",
-  supportEmail: "support@svt.online",
+  supportEmail: "support@strongholdvaulttrustinstitution.online",
   wireThresholdNotice: "Transfers over $25,000 undergo automated treasury risk audit prior to release.",
   maintenanceMode: false,
   announcementTitle: "Institutional Custody & Digital Asset Vaults Online",

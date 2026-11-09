@@ -47,7 +47,7 @@ function AccessibilityPage() {
               ))}
             </ul>
             <p className="pt-4 text-xs text-muted-foreground">
-              If you experience any accessibility issues or require tailored assistance accessing our services, please contact our support team at <strong className="text-foreground">support@svtbank.com</strong>.
+              If you experience any accessibility issues or require tailored assistance accessing our services, please contact our support team at <strong className="text-foreground">support@strongholdvaulttrustinstitution.online</strong>.
             </p>
           </div>
         </div>

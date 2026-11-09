@@ -1850,7 +1850,7 @@ function MasterSoloAdminPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 font-sans">Backup Direct ID:</span>
-                    <span className="font-bold text-[#0a1b33]">support@svt.online</span>
+                    <span className="font-bold text-[#0a1b33]">support@strongholdvaulttrustinstitution.online</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 font-sans">Security Credential:</span>
