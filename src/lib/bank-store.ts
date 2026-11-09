@@ -284,10 +284,11 @@ export function getBankUsers(): BankUser[] {
       return [INITIAL_DEMO_USER];
     }
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
+    if (!Array.isArray(parsed)) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([INITIAL_DEMO_USER]));
       return [INITIAL_DEMO_USER];
     }
+    // Return the actual array even if empty so deleted users stay deleted
     return parsed;
   } catch {
     return [INITIAL_DEMO_USER];
@@ -879,6 +880,12 @@ export function adminUpdateIrsRefundStatus(
 export function deleteBankUser(userId: string): void {
   const users = getBankUsers().filter((u) => u.id !== userId);
   saveBankUsers(users);
+
+  // If the deleted user is currently the active session, clear the session
+  const current = getCurrentSession();
+  if (current && current.id === userId) {
+    setCurrentSession(null);
+  }
 }
 
 // Session Helpers
