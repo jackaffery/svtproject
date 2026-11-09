@@ -1350,8 +1350,8 @@ function MasterSoloAdminPage() {
                   No transactions recorded in institution ledger yet.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <table className="w-full text-left text-xs min-w-[720px]">
                     <thead className="border-b bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                       <tr>
                         <th className="p-3">Reference & Date</th>
