@@ -1551,6 +1551,10 @@ function MasterSoloAdminPage() {
                 <div className="border-t pt-3 space-y-2 text-xs font-mono">
                   <div className="flex justify-between">
                     <span className="text-gray-500 font-sans">Authorized Username:</span>
+                    <span className="font-bold text-[#0a1b33]">Admin123</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-sans">Backup Direct ID:</span>
                     <span className="font-bold text-[#0a1b33]">support@svt.online</span>
                   </div>
                   <div className="flex justify-between">

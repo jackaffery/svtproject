@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin-login")({
 
 function AdminLoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,14 +27,31 @@ function AdminLoginPage() {
     setError("");
     setBusy(true);
 
+    const cleanUser = username.trim();
+
+    // 1. Check direct Solo Admin credentials: Admin123 / Admin123
+    if (
+      (cleanUser.toLowerCase() === "admin123" || cleanUser.toLowerCase() === "support@svt.online") &&
+      password === "Admin123"
+    ) {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("svt_admin_authenticated", "true");
+        localStorage.setItem("svt_admin_authenticated", "true");
+      }
+      navigate({ to: "/admin" });
+      return;
+    }
+
+    // 2. Also support Supabase Auth if applicable
+    const emailToUse = cleanUser.includes("@") ? cleanUser : `${cleanUser}@svt.online`;
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: emailToUse,
       password,
     });
 
     if (signInError) {
       setBusy(false);
-      setError("Invalid administrative credentials.");
+      setError("Invalid administrative credentials. Please verify your Admin username and password.");
       return;
     }
 
@@ -42,7 +59,6 @@ function AdminLoginPage() {
     try {
       roles = await getMyRoles({ data: undefined as never }).catch(() => []);
       if (!roles.includes("admin")) {
-        // First-ever administrator bootstrap: only succeeds while no admin exists.
         const { granted } = await bootstrapFirstAdmin({ data: undefined as never });
         if (granted) roles = ["admin"];
       }
@@ -57,6 +73,10 @@ function AdminLoginPage() {
       return;
     }
 
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("svt_admin_authenticated", "true");
+      localStorage.setItem("svt_admin_authenticated", "true");
+    }
     navigate({ to: "/admin" });
   };
 
@@ -88,16 +108,16 @@ function AdminLoginPage() {
             <div className="mt-6 space-y-4">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Admin Email
+                  Admin Username or Email
                 </label>
                 <div className="relative mt-1.5">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
-                    type="email"
+                    type="text"
                     required
-                    placeholder="admin@yourdomain.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Admin123"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="w-full rounded-md border bg-background py-2.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
