@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
+
+// JSON values that can cross the server-function RPC boundary.
+type SerializableJson = string | number | boolean | null | SerializableJson[] | { [key: string]: SerializableJson };
 
 // ---------- shared DTO types (plain objects only) ----------
 
@@ -34,8 +38,8 @@ export type TransactionDTO = {
   currency: string;
   status: string;
   reference: string;
-  sender: Record<string, unknown> | null;
-  recipient: Record<string, unknown> | null;
+  sender: SerializableJson | null;
+  recipient: SerializableJson | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
   reviewReason: string | null;
@@ -284,10 +288,10 @@ export const updateMyProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as AuthedContext;
     const updates: Record<string, unknown> = {};
-    if (data.fullName !== undefined) updates.full_name = data.fullName;
-    if (data.username !== undefined) updates.username = data.username;
-    if (data.phone !== undefined) updates.phone = data.phone;
-    if (data.address !== undefined) updates.address = data.address;
+    if (data.fullName !== undefined) updates["full_name"] = data.fullName;
+    if (data.username !== undefined) updates["username"] = data.username;
+    if (data.phone !== undefined) updates["phone"] = data.phone;
+    if (data.address !== undefined) updates["address"] = data.address;
     const { data: row, error } = await ctx.supabase
       .from("profiles")
       .update(updates)
@@ -341,8 +345,8 @@ export const createTransaction = createServerFn({ method: "POST" })
       amount: number;
       fee?: number;
       accountId?: string;
-      sender?: Record<string, unknown>;
-      recipient?: Record<string, unknown>;
+      sender?: SerializableJson;
+      recipient?: SerializableJson;
     }) => input,
   )
   .handler(async ({ data, context }) => {
@@ -786,8 +790,8 @@ export const getWebsiteContent = createServerFn({ method: "GET" }).handler(async
   });
   const { data, error } = await supabasePublic.from("website_content").select("key, value");
   if (error) throw new Error(error.message);
-  const out: Record<string, unknown> = {};
-  for (const row of data ?? []) out[row.key as string] = row.value;
+  const out: Record<string, SerializableJson> = {};
+  for (const row of data ?? []) out[row.key as string] = row.value as SerializableJson;
   return out;
 });
 
@@ -800,7 +804,7 @@ export const adminUpdateWebsiteContent = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("website_content").upsert({
       key: data.key,
-      value: data.value as Record<string, unknown>,
+      value: data.value as Json,
       updated_by: ctx.userId,
       updated_at: new Date().toISOString(),
     });
@@ -912,16 +916,16 @@ export const updateMyCard = createServerFn({ method: "POST" })
     if (data.dailySpendingLimit !== undefined) {
       if (!Number.isFinite(data.dailySpendingLimit) || data.dailySpendingLimit < 100)
         throw new Error("Daily spending limit must be at least $100");
-      updates.daily_spending_limit = data.dailySpendingLimit;
+      updates["daily_spending_limit"] = data.dailySpendingLimit;
     }
     if (data.dailyAtmLimit !== undefined) {
       if (!Number.isFinite(data.dailyAtmLimit) || data.dailyAtmLimit < 100)
         throw new Error("Daily ATM limit must be at least $100");
-      updates.daily_atm_limit = data.dailyAtmLimit;
+      updates["daily_atm_limit"] = data.dailyAtmLimit;
     }
     if (data.status !== undefined) {
       if (!["active", "frozen"].includes(data.status)) throw new Error("Invalid card status");
-      updates.status = data.status;
+      updates["status"] = data.status;
     }
     const { data: row, error } = await ctx.supabase
       .from("cards")
