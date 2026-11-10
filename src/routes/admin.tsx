@@ -133,6 +133,8 @@ function MasterSoloAdminPage() {
   const [editingUser, setEditingUser] = useState<BankUser | null>(null);
   const [viewDetailsUser, setViewDetailsUser] = useState<BankUser | null>(null);
   const [userToDelete, setUserToDelete] = useState<BankUser | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteSuccessModal, setDeleteSuccessModal] = useState<{ name: string; acc: string } | null>(null);
   const [editBalanceInput, setEditBalanceInput] = useState("");
   const [editFullName, setEditFullName] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -255,6 +257,8 @@ function MasterSoloAdminPage() {
 
   const confirmDeleteUser = () => {
     if (!userToDelete) return;
+    setIsDeleting(true);
+    const deletedInfo = { name: userToDelete.fullName, acc: userToDelete.accountNumber };
     deleteBankUser(userToDelete.id);
     addSystemActivity({
       category: "account",
@@ -265,8 +269,10 @@ function MasterSoloAdminPage() {
       severity: "critical",
     });
     loadData();
-    showToast(`Customer ${userToDelete.fullName} permanently deleted from institution records`);
+    setIsDeleting(false);
     setUserToDelete(null);
+    setDeleteSuccessModal(deletedInfo);
+    showToast(`Customer ${deletedInfo.name} permanently deleted.`);
   };
 
   const handleLoginAsUser = (u: BankUser) => {
@@ -2451,9 +2457,42 @@ function MasterSoloAdminPage() {
               <button
                 type="button"
                 onClick={confirmDeleteUser}
-                className="rounded-lg bg-red-600 px-5 py-2 font-bold text-white hover:bg-red-700 shadow-md"
+                disabled={isDeleting}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2.5 font-bold text-white hover:bg-red-700 active:scale-95 transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
-                Confirm Delete Customer
+                <Trash2 className="h-4 w-4" />
+                <span>{isDeleting ? "Deleting..." : "Confirm Delete Customer"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Explicit Customer Deleted Notification Modal */}
+      {deleteSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-xs space-y-4 text-gray-800 text-center animate-in fade-in zoom-in-95">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-600">
+              <CheckCircle className="h-7 w-7" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Customer Deleted Successfully</h3>
+              <p className="mt-2 text-xs text-gray-600">
+                Customer <strong>{deleteSuccessModal.name}</strong> (Account #{deleteSuccessModal.acc}) has been completely deleted and purged from the bank records.
+              </p>
+              <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-[11px] text-emerald-800 font-semibold">
+                All ledger records, login credentials, and database sessions for this user have been purged.
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteSuccessModal(null)}
+                className="w-full rounded-lg bg-[#0a1b33] px-5 py-2.5 font-bold text-white hover:bg-[#122b52] shadow-md transition-colors"
+              >
+                Done
               </button>
             </div>
           </div>
