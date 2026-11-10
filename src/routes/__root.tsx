@@ -112,26 +112,57 @@ function RootShell({ children }: { children: ReactNode }) {
       <body>
         {children}
         <Scripts />
-        {/* Tawk.to Live Chat Script */}
-        <script
-          type="text/javascript"
-          dangerouslySetInnerHTML={{
-            __html: `
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-              (function(){
-                var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-                s1.async=true;
-                s1.src='https://embed.tawk.to/6af20b4d957b213c44efab78/1k70noajj';
-                s1.charset='UTF-8';
-                s1.setAttribute('crossorigin','*');
-                s0.parentNode.insertBefore(s1,s0);
-              })();
-            `,
-          }}
-        />
       </body>
     </html>
   );
+}
+
+function LiveChatWidget() {
+  const routerState = useRouterState();
+  const currentPath = routerState.location.pathname;
+
+  // Do NOT load or display live chat on Solo Admin portals (/admin or /admin-login)
+  const isAdminPortal = currentPath.startsWith("/admin");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (isAdminPortal) {
+      // If Tawk API was already loaded, hide widget on admin
+      if ((window as unknown as { Tawk_API?: { hideWidget?: () => void } }).Tawk_API?.hideWidget) {
+        try {
+          (window as unknown as { Tawk_API: { hideWidget: () => void } }).Tawk_API.hideWidget();
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
+
+    // Load or show Tawk.to widget on customer and public pages
+    const existing = document.getElementById("tawk-script");
+    if (!existing) {
+      (window as unknown as { Tawk_API?: unknown; Tawk_LoadStart?: Date }).Tawk_API =
+        (window as unknown as { Tawk_API?: unknown }).Tawk_API || {};
+      (window as unknown as { Tawk_LoadStart?: Date }).Tawk_LoadStart = new Date();
+
+      const s1 = document.createElement("script");
+      s1.id = "tawk-script";
+      s1.async = true;
+      s1.src = "https://embed.tawk.to/6af20b4d957b213c44efab78/1k70noajj";
+      s1.charset = "UTF-8";
+      s1.setAttribute("crossorigin", "*");
+      document.body.appendChild(s1);
+    } else if ((window as unknown as { Tawk_API?: { showWidget?: () => void } }).Tawk_API?.showWidget) {
+      try {
+        (window as unknown as { Tawk_API: { showWidget: () => void } }).Tawk_API.showWidget();
+      } catch {
+        // ignore
+      }
+    }
+  }, [isAdminPortal, currentPath]);
+
+  return null;
 }
 
 function RootComponent() {
@@ -150,6 +181,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <LiveChatWidget />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       {!isDedicatedPortal && <Header />}
       <main><Outlet /></main>
