@@ -69,11 +69,17 @@
 
 @layer base {
   * { border-color: var(--color-border); }
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
   }
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; }
 }
