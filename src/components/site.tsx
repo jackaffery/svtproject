@@ -107,7 +107,6 @@ export function Footer() {
             <li><Link to="/terms" className="hover:underline">Terms of Service</Link></li>
             <li><Link to="/sitemap" className="hover:underline">Sitemap</Link></li>
             <li><Link to="/accessibility" className="hover:underline">Accessibility</Link></li>
-            <li className="pt-2"><Link to="/admin-login" className="inline-flex items-center gap-1.5 font-semibold text-gold hover:underline"><ShieldCheck className="h-3.5 w-3.5" /> Solo Admin Portal</Link></li>
           </ul>
         </div>
       </div>
@@ -117,7 +116,6 @@ export function Footer() {
             © {new Date().getFullYear()} Stronghold Vault Trust Institution. SVT is a financial services platform. All rights reserved. <span className="ml-2 font-semibold text-gold">FDIC Insured</span>
           </p>
           <div className="flex flex-wrap items-center gap-4 text-xs">
-            <Link to="/admin-login" className="font-semibold text-gold hover:underline">Solo Admin</Link>
             <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
             <Link to="/terms" className="hover:underline">Terms of Service</Link>
             <Link to="/sitemap" className="hover:underline">Sitemap</Link>
